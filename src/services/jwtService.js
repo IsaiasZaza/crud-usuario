@@ -1,6 +1,6 @@
 const jwt = require('jsonwebtoken');
 
-const JWT_SECRET = process.env.JWT_SECRET || '123'; // Use variável de ambiente para o segredo
+const JWT_SECRET = process.env.JWT_SECRET || '123'; 
 
 /**
  * Gera um token JWT para o usuário.

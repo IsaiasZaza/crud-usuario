@@ -32,7 +32,6 @@ router.post('/login', async (req, res) => {
     return res.status(status).json(data);
 });
 
-// As rotas abaixo estão protegidas pelo middleware authenticateUser
 router.get('/users', authenticateUser, async (req, res) => {
     const { status, data } = await getUsers();
     return res.status(status).json(data);
