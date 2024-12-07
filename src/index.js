@@ -1,7 +1,7 @@
 const server = require('./server');
 
 const config = {
-    port: 3000,
+    port: 3001,
 };
 
 server(config);

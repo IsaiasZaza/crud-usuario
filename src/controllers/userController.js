@@ -3,7 +3,11 @@ const prisma = new PrismaClient();
 const jwt = require('jsonwebtoken');
 const bcrypt = require('bcrypt');
 const SALT_ROUNDS = 10;
-const { generateToken } = require('../services/jwtService'); 
+const { generateToken } = require('../services/jwtService');
+const nodemailer = require('nodemailer'); // Para envio de emails
+require('dotenv').config();
+
+
 
 const { ERROR_MESSAGES, HTTP_STATUS_CODES, SUCCESS_MESSAGES } = require('../utils/enum');
 
@@ -22,7 +26,6 @@ const createUser = async ({ nome, email, senha }) => {
             data: { user: { id: newUser.id, nome: newUser.nome, email: newUser.email }, token },
         };
     } catch (error) {
-        console.error('Erro ao criar usuário:', error.message);
         return {
             status: HTTP_STATUS_CODES.INTERNAL_SERVER_ERROR,
             data: { message: ERROR_MESSAGES.ERROR_CREAT_USER },
@@ -188,12 +191,106 @@ const deleteUser = async ({ id }) => {
     }
 };
 
-module.exports = { 
-    createUser, 
-    getUsers, 
-    getUserById, 
-    updateUser, 
-    deleteUser, 
+const forgotPassword = async ({ email }) => {
+    try {
+
+        const user = await prisma.user.findUnique({
+            where: { email },
+        });
+
+        if (!user) {
+            return {
+                status: HTTP_STATUS_CODES.NOT_FOUND,
+                data: { message: ERROR_MESSAGES.USER_NOT_FOUND },
+            };
+        }
+
+        const resetToken = jwt.sign({ id: user.id, email: user.email }, process.env.JWT_SECRET, {
+            expiresIn: '1h',
+        });
+
+        const transporter = nodemailer.createTransport({
+            service: 'gmail',
+            auth: {
+                user: process.env.EMAIL_USER,
+                pass: process.env.EMAIL_PASSWORD,
+            },
+        });
+
+        const mailOptions = {
+            from: process.env.EMAIL_USER,
+            to: email,
+            subject: 'Redefinição de Senha - CETMA',
+            text: `Olá, ${user.nome},
+          
+          Recebemos uma solicitação para redefinir a sua senha na CETMA. Para continuar, basta clicar no link abaixo e seguir as instruções:
+          
+          [Redefinir minha senha](${process.env.FRONTEND_URL}/reset-password?token=${resetToken})
+          
+          Este link é válido por 1 hora, então não deixe de usá-lo dentro desse período.
+          
+          Caso não tenha solicitado a alteração de senha, por favor, desconsidere este e-mail. Se você tiver alguma dúvida ou precisar de ajuda, entre em contato com a nossa equipe de suporte.
+          
+          Atenciosamente,
+          Equipe CETMA`,
+        };
+
+        await transporter.sendMail(mailOptions);
+
+        return {
+            status: HTTP_STATUS_CODES.OK,
+            data: { message: SUCCESS_MESSAGES.EMAIL_SENT },
+        };
+    } catch (error) {
+        return {
+            status: HTTP_STATUS_CODES.INTERNAL_SERVER_ERROR,
+            data: { message: ERROR_MESSAGES.ERROR_INTERNAL_SERVER },
+        };
+    }
+};
+
+const resetPassword = async ({ token, password }) => {
+    try {
+        const decoded = jwt.verify(token, process.env.JWT_SECRET);
+        const user = await prisma.user.findUnique({ where: { id: decoded.id } });
+
+        if (!user) {
+            return {
+                status: HTTP_STATUS_CODES.NOT_FOUND,
+                data: { message: ERROR_MESSAGES.USER_NOT_FOUND },
+            };
+        }
+
+        const hashedPassword = await bcrypt.hash(password, SALT_ROUNDS);
+
+        await prisma.user.update({
+            where: { id: decoded.id },
+            data: { senha: hashedPassword },
+        });
+
+        return {
+            status: HTTP_STATUS_CODES.OK,
+            data: { message: SUCCESS_MESSAGES.SUCCESS_PASSWORD_CHANGED },
+        };
+    } catch (error) {
+        return {
+            status: HTTP_STATUS_CODES.INTERNAL_SERVER_ERROR,
+            data: { message: ERROR_MESSAGES.ERROR_INTERNAL_SERVER },
+        };
+    }
+};
+
+module.exports = { resetPassword };
+
+
+module.exports = {
+    createUser,
+    getUsers,
+    getUserById,
+    updateUser,
+    deleteUser,
     changeUserPassword,
-    loginUser
+    loginUser,
+    forgotPassword,
+    resetPassword
 };

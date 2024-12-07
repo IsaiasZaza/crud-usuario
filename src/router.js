@@ -7,6 +7,8 @@ const {
     deleteUser,
     changeUserPassword,
     loginUser,
+    forgotPassword,
+    resetPassword
 } = require('./controllers/userController');
 const authenticateUser = require('./middlewares/authMiddlewares');
 const { ERROR_MESSAGES, HTTP_STATUS_CODES } = require('./utils/enum');
@@ -67,6 +69,27 @@ router.put('/user/:id/change-password', authenticateUser, async (req, res) => {
     }
 
     const { status, data } = await changeUserPassword({ id, senhaAtual, novaSenha });
+    return res.status(status).json(data);
+});
+
+router.post('/forgot-password', async (req, res) => {
+    const { email } = req.body;
+
+    const response = await forgotPassword({ email });
+
+    res.status(response.status).send(response.data);
+})
+
+router.post('/reset-password', async (req, res) => {
+    const { token, password } = req.body;
+
+    if (!token || !password) {
+        return res
+            .status(HTTP_STATUS_CODES.BAD_REQUEST)
+            .json({ message: ERROR_MESSAGES.TOKEN_AND_PASSWORD_REQUIRED });
+    }
+
+    const { status, data } = await resetPassword({ token, password });
     return res.status(status).json(data);
 });
 
