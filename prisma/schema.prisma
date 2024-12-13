@@ -14,9 +14,32 @@ datasource db {
 }
 
 model User {
-  id         Int      @id @default(autoincrement())
+  id         Int       @id @default(autoincrement())
   nome       String
-  email      String   @unique
+  email      String    @unique
   senha      String
-  createdAt DateTime @default(now())
+  createdAt  DateTime  @default(now())
+  purchases  Purchase[]
+}
+
+model Course {
+  id          Int       @id @default(autoincrement())
+  title       String
+  description String
+  price       Float
+  createdAt   DateTime  @default(now())
+  updatedAt   DateTime  @updatedAt
+  purchases   Purchase[]
+}
+
+model Purchase {
+  id          Int       @id @default(autoincrement())
+  userId      Int
+  courseId    Int
+  status      String    // 'pending', 'paid', 'cancelled', etc.
+  createdAt   DateTime  @default(now())
+  updatedAt   DateTime  @updatedAt
+
+  user        User      @relation(fields: [userId], references: [id])
+  course      Course    @relation(fields: [courseId], references: [id])
 }

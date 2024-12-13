@@ -193,7 +193,6 @@ const deleteUser = async ({ id }) => {
 
 const forgotPassword = async ({ email }) => {
     try {
-
         const user = await prisma.user.findUnique({
             where: { email },
         });
