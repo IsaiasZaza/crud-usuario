@@ -73,12 +73,23 @@ router.put('/user/:id/change-password', authenticateUser, async (req, res) => {
 });
 
 router.post('/forgot-password', async (req, res) => {
-    const { email } = req.body;
+    console.log('Recebendo requisição na rota /forgot-password');
+    try {
+        const { email } = req.body;
+        if (!email) {
+            console.error('Email não informado');
+            return res.status(400).json({ message: 'Email é obrigatório' });
+        }
 
-    const response = await forgotPassword({ email });
+        const response = await forgotPassword({ email });
+        console.log('Resposta da função forgotPassword:', response);
 
-    res.status(response.status).send(response.data);
-})
+        res.status(response.status).send(response.data);
+    } catch (error) {
+        console.error('Erro na rota /forgot-password:', error);
+        res.status(500).json({ message: 'Erro interno do servidor' });
+    }
+});
 
 router.post('/reset-password', async (req, res) => {
     const { token, password } = req.body;
