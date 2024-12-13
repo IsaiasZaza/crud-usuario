@@ -86,8 +86,7 @@ router.post('/forgot-password', async (req, res) => {
 
         res.status(response.status).send(response.data);
     } catch (error) {
-        console.error('Erro na rota /forgot-password:', error);
-        res.status(500).json({ message: 'Erro interno do servidor' });
+        res.status(500).json({ message: 'Erro interno doservidor' });
     }
 });
 
