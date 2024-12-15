@@ -20,6 +20,7 @@ const ERROR_MESSAGES = {
     RESOURCE_NOT_FOUND: 'Recurso solicitado não encontrado.',
     METHOD_NOT_ALLOWED: 'Método HTTP não permitido.',
     SERVICE_UNAVAILABLE: 'Serviço temporariamente indisponível.',
+    INVALID_ROLE: 'Função inválida. Escolha entre ADMIN, PROFESSOR ou ALUNO.'
 };
 
 const SUCCESS_MESSAGES = {

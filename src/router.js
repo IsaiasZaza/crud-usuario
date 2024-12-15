@@ -16,8 +16,8 @@ const { ERROR_MESSAGES, HTTP_STATUS_CODES } = require('./utils/enum');
 const router = express.Router();
 
 router.post('/user', async (req, res) => {
-    const { nome, email, senha } = req.body;
-    const { status, data } = await createUser({ nome, email, senha });
+    const { nome, email, senha, role } = req.body;
+    const { status, data } = await createUser({ nome, email, senha, role });
     return res.status(status).json(data);
 });
 

@@ -11,21 +11,49 @@ require('dotenv').config();
 
 const { ERROR_MESSAGES, HTTP_STATUS_CODES, SUCCESS_MESSAGES } = require('../utils/enum');
 
-const createUser = async ({ nome, email, senha }) => {
+const createUser = async ({ nome, email, senha, role = 'ALUNO' }) => {
     try {
+        // Verifica se o role fornecido é válido
+        const validRoles = ['ADMIN', 'PROFESSOR', 'ALUNO'];
+        if (!validRoles.includes(role.toUpperCase())) {
+            return {
+                status: HTTP_STATUS_CODES.BAD_REQUEST,
+                data: { message: ERROR_MESSAGES.INVALID_ROLE },
+            };
+        }
+
         const hashedPassword = await bcrypt.hash(senha, SALT_ROUNDS);
+
         const newUser = await prisma.user.create({
-            data: { nome, email, senha: hashedPassword },
+            data: { 
+                nome, 
+                email, 
+                senha: hashedPassword, 
+                role: role.toUpperCase() 
+            },
         });
 
-        const token = generateToken({ id: newUser.id, email: newUser.email, nome: newUser.nome });
-
+        const token = generateToken({ 
+            id: newUser.id, 
+            email: newUser.email, 
+            nome: newUser.nome, 
+            role: newUser.role 
+        });
 
         return {
             status: HTTP_STATUS_CODES.CREATED,
-            data: { user: { id: newUser.id, nome: newUser.nome, email: newUser.email }, token },
+            data: { 
+                user: { 
+                    id: newUser.id, 
+                    nome: newUser.nome, 
+                    email: newUser.email, 
+                    role: newUser.role 
+                }, 
+                token 
+            },
         };
     } catch (error) {
+        console.error('Erro ao criar usuário:', error.message);
         return {
             status: HTTP_STATUS_CODES.INTERNAL_SERVER_ERROR,
             data: { message: ERROR_MESSAGES.ERROR_CREAT_USER },
