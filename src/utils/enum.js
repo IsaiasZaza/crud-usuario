@@ -22,7 +22,7 @@ const ERROR_MESSAGES = {
     SERVICE_UNAVAILABLE: 'Serviço temporariamente indisponível.',
     INVALID_ROLE: 'Função inválida. Escolha entre ADMIN, PROFESSOR ou ALUNO.',
     INVALID_REQUESTED_ROLE: 'A função solicitada para login é inválida.',
-    ROLE_NOT_ALLOWED: 'Você não possui permissão para acessar como a função solicitada.'
+    ROLE_NOT_ALLOWED: 'Permissão insuficiente para função solicitada.'
 };
 
 const SUCCESS_MESSAGES = {
