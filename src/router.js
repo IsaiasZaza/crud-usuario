@@ -22,7 +22,7 @@ router.post('/user', async (req, res) => {
 });
 
 router.post('/login', async (req, res) => {
-    const { email, senha } = req.body;
+    const { email, senha, role } = req.body;
 
     if (!email || !senha) {
         return res
@@ -30,7 +30,7 @@ router.post('/login', async (req, res) => {
             .json({ message: ERROR_MESSAGES.EMAIL_AND_PASSWORD_REQUIRED });
     }
 
-    const { status, data } = await loginUser({ email, senha });
+    const { status, data } = await loginUser({ email, senha, role });
     return res.status(status).json(data);
 });
 

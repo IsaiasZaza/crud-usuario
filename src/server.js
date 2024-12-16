@@ -3,8 +3,6 @@ const routes = require('./router');
 const cors = require('cors');
 require('dotenv').config();
 
-
-
 module.exports = (config) => {
 
     const { port } = config;

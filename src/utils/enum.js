@@ -20,14 +20,23 @@ const ERROR_MESSAGES = {
     RESOURCE_NOT_FOUND: 'Recurso solicitado não encontrado.',
     METHOD_NOT_ALLOWED: 'Método HTTP não permitido.',
     SERVICE_UNAVAILABLE: 'Serviço temporariamente indisponível.',
-    INVALID_ROLE: 'Função inválida. Escolha entre ADMIN, PROFESSOR ou ALUNO.'
+    INVALID_ROLE: 'Função inválida. Escolha entre ADMIN, PROFESSOR ou ALUNO.',
+    INVALID_REQUESTED_ROLE: 'A função solicitada para login é inválida.',
+    ROLE_NOT_ALLOWED: 'Você não possui permissão para acessar como a função solicitada.'
 };
 
 const SUCCESS_MESSAGES = {
-    SUCCESS_PASSWORD_CHANGED: 'Senha alterada com sucesso.',
     SUCCESS_USER_CREATED: 'Usuário criado com sucesso.',
     SUCCESS_USER_UPDATED: 'Usuário atualizado com sucesso.',
     SUCCESS_USER_DELETED: 'Usuário deletado com sucesso.',
+    USER_CREATED: 'Usuário criado com sucesso.',
+    LOGIN_SUCCESS: 'Login realizado com sucesso.',
+    SUCCESS_PASSWORD_CHANGED: 'Senha alterada com sucesso.',
+    USERS_FOUND: 'Usuários encontrados com sucesso.',
+    USER_FOUND: 'Usuário encontrado com sucesso.',
+    USER_UPDATED: 'Usuário atualizado com sucesso.',
+    USER_DELETED: 'Usuário deletado com sucesso.',
+    EMAIL_SENT: 'E-mail de redefinição de senha enviado com sucesso.',
 };
 
 const USER_ROLES_DESCRIPTION = {

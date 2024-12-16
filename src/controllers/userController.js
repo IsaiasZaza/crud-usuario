@@ -25,31 +25,32 @@ const createUser = async ({ nome, email, senha, role = 'ALUNO' }) => {
         const hashedPassword = await bcrypt.hash(senha, SALT_ROUNDS);
 
         const newUser = await prisma.user.create({
-            data: { 
-                nome, 
-                email, 
-                senha: hashedPassword, 
-                role: role.toUpperCase() 
+            data: {
+                nome,
+                email,
+                senha: hashedPassword,
+                role: role.toUpperCase()
             },
         });
 
-        const token = generateToken({ 
-            id: newUser.id, 
-            email: newUser.email, 
-            nome: newUser.nome, 
-            role: newUser.role 
+        const token = generateToken({
+            id: newUser.id,
+            email: newUser.email,
+            nome: newUser.nome,
+            role: newUser.role
         });
 
         return {
             status: HTTP_STATUS_CODES.CREATED,
-            data: { 
-                user: { 
-                    id: newUser.id, 
-                    nome: newUser.nome, 
-                    email: newUser.email, 
-                    role: newUser.role 
-                }, 
-                token 
+            data: {
+                message: SUCCESS_MESSAGES.USER_CREATED,
+                user: {
+                    id: newUser.id,
+                    nome: newUser.nome,
+                    email: newUser.email,
+                    role: newUser.role
+                },
+                token
             },
         };
     } catch (error) {
@@ -61,7 +62,7 @@ const createUser = async ({ nome, email, senha, role = 'ALUNO' }) => {
     }
 };
 
-const loginUser = async ({ email, senha }) => {
+const loginUser = async ({ email, senha, role }) => {
     try {
         const user = await prisma.user.findUnique({
             where: { email },
@@ -74,6 +75,24 @@ const loginUser = async ({ email, senha }) => {
             };
         }
 
+        // Verifica se a role solicitada é válida
+        const validRoles = ['ALUNO', 'ADMIN', 'PROFESSOR'];
+        if (!validRoles.includes(role)) {
+            return {
+                status: HTTP_STATUS_CODES.BAD_REQUEST,
+                data: { message: ERROR_MESSAGES.INVALID_REQUESTED_ROLE },
+            };
+        }
+
+        // Verifica se o usuário tem a role solicitada
+        if (user.role !== role) {
+            return {
+                status: HTTP_STATUS_CODES.FORBIDDEN,
+                data: { message: ERROR_MESSAGES.ROLE_NOT_ALLOWED },
+            };
+        }
+
+        // Valida a senha
         const senhaValida = await bcrypt.compare(senha, user.senha);
         if (!senhaValida) {
             return {
@@ -82,17 +101,23 @@ const loginUser = async ({ email, senha }) => {
             };
         }
 
+        // Gera o token
         const token = generateToken({
             id: user.id,
             nome: user.nome,
             email: user.email,
+            role: user.role, // Adiciona a role no token
         });
 
         const { senha: _, ...userData } = user;
 
         return {
             status: HTTP_STATUS_CODES.OK,
-            data: { user: userData, token },
+            data: {
+                message: SUCCESS_MESSAGES.LOGIN_SUCCESS,
+                user: userData,
+                token,
+            },
         };
     } catch (error) {
         console.error('Erro ao fazer login:', error.message);
@@ -102,6 +127,7 @@ const loginUser = async ({ email, senha }) => {
         };
     }
 };
+
 
 const changeUserPassword = async ({ id, senhaAtual, novaSenha }) => {
     try {
@@ -179,7 +205,13 @@ const getUserById = async ({ id }) => {
         }
 
         const { senha, ...userWithoutPassword } = user;
-        return { status: HTTP_STATUS_CODES.OK, data: userWithoutPassword };
+        return {
+            status: HTTP_STATUS_CODES.OK,
+            data: {
+                message: SUCCESS_MESSAGES.USER_FOUND,
+                user: userWithoutPassword
+            }
+        };
     } catch (error) {
         console.error('Erro ao buscar usuário por ID:', error.message);
         return {
@@ -196,7 +228,13 @@ const updateUser = async ({ id, nome, email }) => {
             data: { nome, email },
         });
 
-        return { status: HTTP_STATUS_CODES.OK, data: updatedUser };
+        return {
+            status: HTTP_STATUS_CODES.OK,
+            data: {
+                message: SUCCESS_MESSAGES.USER_UPDATED,
+                user: updatedUser
+            }
+        };
     } catch (error) {
         console.error('Erro ao atualizar usuário:', error.message);
         return {
@@ -209,7 +247,11 @@ const updateUser = async ({ id, nome, email }) => {
 const deleteUser = async ({ id }) => {
     try {
         await prisma.user.delete({ where: { id: parseInt(id, 10) } });
-        return { status: HTTP_STATUS_CODES.NO_CONTENT, data: null };
+        return {
+            status: HTTP_STATUS_CODES.NO_CONTENT,
+            data: { message: SUCCESS_MESSAGES.USER_DELETED }
+        };
+
     } catch (error) {
         console.error('Erro ao deletar usuário:', error.message);
         return {
