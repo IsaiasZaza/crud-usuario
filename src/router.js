@@ -40,7 +40,7 @@ router.post('/payment-webhook', async (req, res) => {
     } catch (error) {
         console.error('Erro ao processar webhook de pagamento:', error.message);
         return res.status(HTTP_STATUS_CODES.INTERNAL_SERVER_ERROR).json({
-            message: 'Erro interno ao processar o webhook de pagamento.',
+            message: 'Erro interno ao processar o webhook de pagameno.',
         });
     }
 });
