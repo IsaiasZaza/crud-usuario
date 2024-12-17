@@ -15,121 +15,26 @@ const paymentClient = new Payment(client);
 
 const handleWebhookPaymentStatus = async (paymentId) => {
     try {
-        if (!paymentId) {
-            return {
-                status: 400,
-                message: 'ID de pagamento não fornecido.',
-            };
-        }
+        // Consultar o status do pagamento via MercadoPago
+        const paymentData = await paymentClient.getPayment(paymentId);
 
-        // Recuperar os detalhes do pagamento com a nova SDK
-        let paymentData;
-        try {
-            const response = await paymentClient.get({ id: paymentId });
-            paymentData = response; // Agora 'response' contém o pagamento direto
-        } catch (error) {
-            console.error('Erro ao consultar o pagamento do Mercado Pago:', error);
-            return {
-                status: 500,
-                message: 'Erro ao consultar o pagamento do Mercado Pago.',
-            };
-        }
+        // Verificar o status do pagamento
+        const { status, status_detail } = paymentData.response;
 
-        console.log('Detalhes do pagamento:', paymentData);
-
-        // Extraia os dados necessários
-        const { status: paymentStatus, external_reference } = paymentData;
-
-        // Verificar se a referência externa (ID da compra) está presente
-        if (!external_reference) {
-            console.error('Referência do pedido ausente no pagamento.');
-            return {
-                status: 400,
-                message: 'Referência do pedido ausente no pagamento.',
-            };
-        }
-
-        // Buscar a compra associada no banco de dados
-        const purchase = await prisma.purchase.findUnique({
-            where: { id: external_reference }, // external_reference é o ID da compra
+        // Atualizar o status no banco de dados
+        const updatedPayment = await prisma.payment.update({
+            where: { paymentId },
+            data: {
+                status,
+                statusDetail: status_detail,
+            },
         });
 
-        if (!purchase) {
-            console.error('Compra não encontrada para o ID:', external_reference);
-            return {
-                status: 404,
-                message: 'Compra não encontrada.',
-            };
-        }
-
-        // Lógica de atualização da compra com base no status do pagamento
-        switch (paymentStatus) {
-            case 'approved':
-                // Atualizar status da compra para 'paid' e associar o curso ao usuário
-                await prisma.purchase.update({
-                    where: { id: purchase.id },
-                    data: {
-                        status: 'paid',
-                        updatedAt: new Date(),
-                    },
-                });
-
-                await prisma.user.update({
-                    where: { id: purchase.userId },
-                    data: {
-                        courses: {
-                            connect: { id: purchase.courseId },
-                        },
-                    },
-                });
-
-                return {
-                    status: 200,
-                    message: 'Pagamento aprovado. Curso adicionado ao usuário.',
-                };
-
-            case 'cancelled':
-                // Atualizar status da compra para 'cancelled'
-                await prisma.purchase.update({
-                    where: { id: purchase.id },
-                    data: {
-                        status: 'cancelled',
-                        updatedAt: new Date(),
-                    },
-                });
-
-                return {
-                    status: 200,
-                    message: 'Pagamento cancelado. Status da compra atualizado.',
-                };
-
-            case 'pending':
-                // Atualizar status da compra para 'pending'
-                await prisma.purchase.update({
-                    where: { id: purchase.id },
-                    data: {
-                        status: 'pending',
-                        updatedAt: new Date(),
-                    },
-                });
-
-                return {
-                    status: 200,
-                    message: 'Pagamento pendente. Status da compra atualizado.',
-                };
-
-            default:
-                return {
-                    status: 400,
-                    message: 'Status de pagamento desconhecido.',
-                };
-        }
+        console.log(`Pagamento atualizado: ${updatedPayment.id}, Status: ${status}`);
+        return updatedPayment;
     } catch (error) {
-        console.error('Erro ao processar o webhook do Mercado Pago:', error);
-        return {
-            status: 500,
-            message: 'Erro interno ao processar o pagamento.',
-        };
+        console.error('Erro ao processar o pagamento: ', error);
+        throw new Error('Erro ao processar o pagamento');
     }
 };
 

@@ -25,24 +25,13 @@ const client = new MercadoPagoConfig({
 require('dotenv').config();
 
 router.post('/payment-webhook', async (req, res) => {
-    const { id, status } = req.body;  // Dados enviados pelo Mercado Pago (payment_id, status)
-
-    if (!id) {
-        return res.status(HTTP_STATUS_CODES.BAD_REQUEST).json({
-            message: 'ID de pagamento é obrigatório.',
-        });
-    }
+    const paymentId = req.body.data.id; // Supondo que o ID do pagamento esteja em 'data.id'
 
     try {
-        // Chama a função para processar o status do pagamento
-        const result = await handleWebhookPaymentStatus(id, status);
-
-        return res.status(result.status).json({ message: result.message });
+        const updatedPayment = await handleWebhookPaymentStatus(paymentId);
+        res.status(200).send(updatedPayment);
     } catch (error) {
-        console.error('Erro ao processar webhook de pagamento:', error.message);
-        return res.status(HTTP_STATUS_CODES.INTERNAL_SERVER_ERROR).json({
-            message: 'Erro interno ao processar o webhook de pagameno.',
-        });
+        res.status(500).send('Erro ao processar o pagamento');
     }
 });
 
