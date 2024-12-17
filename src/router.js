@@ -12,13 +12,81 @@ const {
 } = require('./controllers/userController');
 const authenticateUser = require('./middlewares/authMiddlewares');
 const { ERROR_MESSAGES, HTTP_STATUS_CODES } = require('./utils/enum');
+const { MercadoPagoConfig, Preference } = require('mercadopago');
+
 
 const router = express.Router();
+
+const client = new MercadoPagoConfig({
+    accessToken: process.env.MERCADO_PAGO_ACCESS_TOKEN
+});
+
+require('dotenv').config();
+
+router.post('/payment-webhook', async (req, res) => {
+    const { id, status } = req.body;  // Dados enviados pelo Mercado Pago (payment_id, status)
+
+    if (!id) {
+        return res.status(HTTP_STATUS_CODES.BAD_REQUEST).json({
+            message: 'ID de pagamento é obrigatório.',
+        });
+    }
+
+    try {
+        // Chama a função para processar o status do pagamento
+        const result = await handleWebhookPaymentStatus(id, status);
+
+        return res.status(result.status).json({ message: result.message });
+    } catch (error) {
+        console.error('Erro ao processar webhook de pagamento:', error.message);
+        return res.status(HTTP_STATUS_CODES.INTERNAL_SERVER_ERROR).json({
+            message: 'Erro interno ao processar o webhook de pagamento.',
+        });
+    }
+});
+
 
 router.post('/user', async (req, res) => {
     const { nome, email, senha, role } = req.body;
     const { status, data } = await createUser({ nome, email, senha, role });
     return res.status(status).json(data);
+});
+
+router.post('/create-payment', async (req, res) => {
+    try {
+        const { title, quantity, price } = req.body;
+
+        // Criando a preferência de pagamento
+        const preference = new Preference(client);
+        const result = await preference.create({
+            body: {
+                items: [
+                    {
+                        title, 
+                        quantity,
+                        currency_id: 'BRL',
+                        unit_price: parseFloat(price),
+                    },
+                ],
+                back_urls: {
+                    success: `${process.env.FRONTEND_URL}/payment-success`,
+                    failure: `${process.env.FRONTEND_URL}/payment-failure`,
+                    pending: `${process.env.FRONTEND_URL}/payment-pending`,
+                },
+                auto_return: 'approved',
+            },
+        });
+
+        return res.status(200).json({
+            message: 'Link do pagamento gerado com sucesso',
+            checkoutUrl: result.init_point,
+        });
+    } catch (error) {
+        console.error('Erro ao criar pagamento:', error);
+        return res.status(500).json({
+            message: 'Erro interno ao criar pagamento',
+        });
+    }
 });
 
 router.post('/login', async (req, res) => {
