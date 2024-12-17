@@ -9,8 +9,8 @@ const {
     loginUser,
     forgotPassword,
     resetPassword,
-    handleWebhookPaymentStatus
 } = require('./controllers/userController');
+const { handleWebhookPaymentStatus } = require('./controllers/mercadoPagoController')
 const authenticateUser = require('./middlewares/authMiddlewares');
 const { ERROR_MESSAGES, HTTP_STATUS_CODES } = require('./utils/enum');
 const { MercadoPagoConfig, Preference } = require('mercadopago');
@@ -63,7 +63,7 @@ router.post('/create-payment', async (req, res) => {
             body: {
                 items: [
                     {
-                        title, 
+                        title,
                         quantity,
                         currency_id: 'BRL',
                         unit_price: parseFloat(price),

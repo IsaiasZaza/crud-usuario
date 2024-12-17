@@ -6,6 +6,7 @@ const SALT_ROUNDS = 10;
 const { generateToken } = require('../services/jwtService');
 const nodemailer = require('nodemailer'); // Para envio de emails
 require('dotenv').config();
+const { mercadopago } = require('mercadopago');
 
 
 
@@ -349,96 +350,6 @@ const resetPassword = async ({ token, password }) => {
     }
 };
 
-const handleWebhookPaymentStatus = async (paymentId, status) => {
-    try {
-        // Recupera os detalhes do pagamento utilizando o ID
-        const payment = await mercadopago.payment.get(paymentId);
-        const { collection_id, order, status: paymentStatus } = payment.body;
-
-        // Encontra a compra associada ao pagamento
-        const purchase = await prisma.purchase.findUnique({
-            where: { id: order.id }, // Assume que order.id é o mesmo que purchase.id
-        });
-
-        if (!purchase) {
-            return {
-                status: 404,
-                message: 'Compra não encontrada.',
-            };
-        }
-
-        // Lógica para atualizar o status da compra
-        if (paymentStatus === 'approved') {
-            // Se o pagamento foi aprovado, atualize o status da compra e associe o curso ao usuário
-            await prisma.purchase.update({
-                where: { id: purchase.id },
-                data: {
-                    status: 'paid',
-                    updatedAt: new Date(),
-                },
-            });
-
-            // Associa o curso ao usuário
-            await prisma.user.update({
-                where: { id: purchase.userId },
-                data: {
-                    purchases: {
-                        connect: { id: purchase.courseId }, // Conecta o curso ao usuário
-                    },
-                },
-            });
-
-            return {
-                status: 200,
-                message: 'Pagamento aprovado. Curso adicionado ao usuário.',
-            };
-        }
-
-        if (paymentStatus === 'cancelled') {
-            // Se o pagamento foi cancelado, apenas atualize o status da compra
-            await prisma.purchase.update({
-                where: { id: purchase.id },
-                data: {
-                    status: 'cancelled',
-                    updatedAt: new Date(),
-                },
-            });
-
-            return {
-                status: 200,
-                message: 'Pagamento cancelado. Status da compra atualizado.',
-            };
-        }
-
-        if (paymentStatus === 'pending') {
-            // Se o pagamento está pendente, apenas atualize o status
-            await prisma.purchase.update({
-                where: { id: purchase.id },
-                data: {
-                    status: 'pending',
-                    updatedAt: new Date(),
-                },
-            });
-
-            return {
-                status: 200,
-                message: 'Pagamento pendente. Status da compra atualizado.',
-            };
-        }
-
-        return {
-            status: 400,
-            message: 'Status de pagamento desconhecido.',
-        };
-    } catch (error) {
-        console.error('Erro ao processar o pagamento do webhook:', error.message);
-        return {
-            status: 500,
-            message: 'Erro interno ao processar o pagamento.',
-        };
-    }
-};
-
 
 module.exports = {
     createUser,
@@ -450,5 +361,4 @@ module.exports = {
     loginUser,
     forgotPassword,
     resetPassword,
-    handleWebhookPaymentStatus
 };
