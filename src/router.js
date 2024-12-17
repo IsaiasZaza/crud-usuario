@@ -8,7 +8,8 @@ const {
     changeUserPassword,
     loginUser,
     forgotPassword,
-    resetPassword
+    resetPassword,
+    handleWebhookPaymentStatus
 } = require('./controllers/userController');
 const authenticateUser = require('./middlewares/authMiddlewares');
 const { ERROR_MESSAGES, HTTP_STATUS_CODES } = require('./utils/enum');
