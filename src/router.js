@@ -25,13 +25,28 @@ const client = new MercadoPagoConfig({
 require('dotenv').config();
 
 router.post('/payment-webhook', async (req, res) => {
-    const paymentId = req.body.data.id; // Supondo que o ID do pagamento esteja em 'data.id'
-
     try {
+        // Validar se a requisição contém o ID do pagamento
+        if (!req.body?.data?.id) {
+            console.error('Webhook sem ID de pagamento válido.');
+            return res.status(400).send('Requisição inválida: ID de pagamento não encontrado.');
+        }
+
+        const paymentId = req.body.data.id;
+
+        // Processar o webhook
         const updatedPayment = await handleWebhookPaymentStatus(paymentId);
+
+        if (updatedPayment.status >= 400) {
+            console.error('Erro no processamento do webhook:', updatedPayment.message);
+            return res.status(updatedPayment.status).send(updatedPayment.message);
+        }
+
+        // Retornar sucesso
         res.status(200).send(updatedPayment);
     } catch (error) {
-        res.status(500).send('Erro ao processar o pagamento');
+        console.error('Erro ao processar o webhook do Mercado Pago:', error.message);
+        res.status(500).send('Erro ao processar o pagamento.');
     }
 });
 
