@@ -10,10 +10,11 @@ const {
     forgotPassword,
     resetPassword,
 } = require('./controllers/userController');
-const { handleWebhookPaymentStatus } = require('./controllers/mercadoPagoController')
 const authenticateUser = require('./middlewares/authMiddlewares');
 const { ERROR_MESSAGES, HTTP_STATUS_CODES } = require('./utils/enum');
-const { MercadoPagoConfig, Preference } = require('mercadopago');
+const { MercadoPagoConfig, Payment } = require('mercadopago');
+const axios = require('axios');
+
 
 
 const router = express.Router();
@@ -24,32 +25,65 @@ const client = new MercadoPagoConfig({
 
 require('dotenv').config();
 
-router.post('/payment-webhook', async (req, res) => {
+router.post('/pagamentoatualizado', async (req, res) => {
     try {
-        // Validar se a requisição contém o ID do pagamento
-        if (!req.body?.data?.id) {
-            console.error('Webhook sem ID de pagamento válido.');
-            return res.status(400).send('Requisição inválida: ID de pagamento não encontrado.');
+        console.log('Webhook recebido:', req.body);
+
+        // Valida se a ação é 'payment.update'
+        if (req.body.action === 'payment.update') {
+            const paymentId = req.body.data.id; // ID do pagamento enviado no webhook
+
+            // Valida se o ID do pagamento foi fornecido
+            if (!paymentId) {
+                return res.status(400).json({ message: 'ID do pagamento não fornecido' });
+            }
+
+            console.log(`Consultando pagamento: ${paymentId}`);
+
+            // Consulta ao Mercado Pago para buscar os dados atualizados do pagamento
+            const paymentInfo = await axios.get(
+                `https://api.mercadopago.com/v1/payments/${paymentId}`,
+                {
+                    headers: {
+                        Authorization: `Bearer ${process.env.MERCADO_PAGO_ACCESS_TOKEN}`,
+                    },
+                }
+            );
+
+            const paymentData = paymentInfo.data;
+
+            console.log('Dados do pagamento atualizados:', paymentData);
+
+            // Processa os dados recebidos e implementa sua lógica de negócio
+            const status = paymentData.status; // Status do pagamento (e.g., approved, pending, rejected)
+            const transactionAmount = paymentData.transaction_amount; // Valor da transação
+
+            // Exemplo: Atualizar status do pagamento no banco de dados
+            console.log(
+                `Pagamento ID: ${paymentId} | Status: ${status} | Valor: ${transactionAmount}`
+            );
+
+            // Implemente aqui a lógica de atualização no banco de dados
+
+            return res.status(200).json({
+                message: 'Pagamento atualizado com sucesso',
+                status: status,
+                paymentId: paymentId,
+            });
+        } else {
+            // Caso a ação não seja payment.update
+            console.log('Ação desconhecida recebida no webhook:', req.body.action);
+            return res.status(400).json({ message: 'Ação desconhecida' });
         }
-
-        const paymentId = req.body.data.id;
-
-        // Processar o webhook
-        const updatedPayment = await handleWebhookPaymentStatus(paymentId);
-
-        if (updatedPayment.status >= 400) {
-            console.error('Erro no processamento do webhook:', updatedPayment.message);
-            return res.status(updatedPayment.status).send(updatedPayment.message);
-        }
-
-        // Retornar sucesso
-        res.status(200).send(updatedPayment);
     } catch (error) {
-        console.error('Erro ao processar o webhook do Mercado Pago:', error.message);
-        res.status(500).send('Erro ao processar o pagamento.');
+        console.error('Erro ao processar webhook de pagamento:', error.message);
+        return res.status(500).json({
+            message: 'Erro ao processar webhook de pagamento',
+        });
     }
 });
 
+   
 
 router.post('/user', async (req, res) => {
     const { nome, email, senha, role } = req.body;
@@ -59,40 +93,45 @@ router.post('/user', async (req, res) => {
 
 router.post('/create-payment', async (req, res) => {
     try {
-        const { title, quantity, price } = req.body;
+        const { title, quantity, unit_price, payment_method_id, payer } = req.body;
 
-        // Criando a preferência de pagamento
-        const preference = new Preference(client);
-        const result = await preference.create({
-            body: {
-                items: [
-                    {
-                        title,
-                        quantity,
-                        currency_id: 'BRL',
-                        unit_price: parseFloat(price),
-                    },
-                ],
-                back_urls: {
-                    success: `${process.env.FRONTEND_URL}/payment-success`,
-                    failure: `${process.env.FRONTEND_URL}/payment-failure`,
-                    pending: `${process.env.FRONTEND_URL}/payment-pending`,
-                },
-                auto_return: 'approved',
-            },
-        });
+        // Log para depuração
+        console.log('Dados recebidos:', { title, quantity, unit_price, payment_method_id, payer });
 
-        return res.status(200).json({
-            message: 'Link do pagamento gerado com sucesso',
-            checkoutUrl: result.init_point,
+        if (!title || !quantity || !unit_price || !payment_method_id || !payer) {
+            return res.status(400).json({ 
+                status: 'error', 
+                message: 'Parâmetros inválidos' 
+            });
+        }
+
+        const paymentData = {
+            transaction_amount: quantity * unit_price,
+            description: title,
+            payment_method_id,
+            payer,
+        };
+
+        console.log('Dados enviados ao Mercado Pago:', paymentData);
+
+        const payment = new Payment(client);
+        const response = await payment.create({ body: paymentData });
+
+        return res.status(201).json({
+            status: 'success',
+            paymentId: response.payer.id,
+            status_detail: response.money_release_status,
         });
     } catch (error) {
         console.error('Erro ao criar pagamento:', error);
-        return res.status(500).json({
-            message: 'Erro interno ao criar pagamento',
+        return res.status(error.status || 500).json({
+            status: 'error',
+            message: 'Não foi possível processar o pagamento.',
+            error: error.message,
+            cause: error.cause,
         });
     }
-});
+})
 
 router.post('/login', async (req, res) => {
     const { email, senha, role } = req.body;

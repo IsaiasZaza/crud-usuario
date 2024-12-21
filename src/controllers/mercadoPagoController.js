@@ -16,7 +16,6 @@ const handleWebhookPaymentStatus = async (paymentId) => {
             return { status: 400, message: 'ID de pagamento não fornecido.' };
         }
 
-        // Recuperar os detalhes do pagamento
         let paymentData;
         try {
             const response = await paymentClient.get({ id: paymentId });

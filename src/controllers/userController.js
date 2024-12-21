@@ -30,7 +30,9 @@ const createUser = async ({ nome, email, senha, role = 'ALUNO' }) => {
                 nome,
                 email,
                 senha: hashedPassword,
-                role: role.toUpperCase()
+                role: role.toUpperCase(),
+                estado: 'Brasília-DF', // Valor padrão para estado
+                sobre: 'Bem-vindo(a) à Cetma', // Valor padrão para sobre
             },
         });
 
@@ -49,7 +51,9 @@ const createUser = async ({ nome, email, senha, role = 'ALUNO' }) => {
                     id: newUser.id,
                     nome: newUser.nome,
                     email: newUser.email,
-                    role: newUser.role
+                    role: newUser.role,
+                    estado: newUser.estado, // Incluindo estado no retorno
+                    sobre: newUser.sobre,   // Incluindo sobre no retorno
                 },
                 token
             },
@@ -222,19 +226,25 @@ const getUserById = async ({ id }) => {
     }
 };
 
-const updateUser = async ({ id, nome, email }) => {
+const updateUser = async ({ id, nome, email, estado, sobre, profilePicture }) => {
     try {
         const updatedUser = await prisma.user.update({
             where: { id: parseInt(id, 10) },
-            data: { nome, email },
+            data: {
+                ...(nome && { nome }),
+                ...(email && { email }),
+                ...(estado && { estado }),
+                ...(sobre && { sobre }),
+                ...(profilePicture && { profilePicture }), // Atualizando opcionalmente o campo profilePicture
+            },
         });
 
         return {
             status: HTTP_STATUS_CODES.OK,
             data: {
                 message: SUCCESS_MESSAGES.USER_UPDATED,
-                user: updatedUser
-            }
+                user: updatedUser,
+            },
         };
     } catch (error) {
         console.error('Erro ao atualizar usuário:', error.message);
