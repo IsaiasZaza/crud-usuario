@@ -116,7 +116,10 @@ const loginUser = async ({ email, senha, role }) => {
             id: user.id,
             nome: user.nome,
             email: user.email,
-            role: user.role, // Adiciona a role no token
+            role: user.role,
+            estado: user.estado,
+            sobre: user.sobre,
+            profilePicture: user.profilePicture,
         });
 
         const { senha: _, ...userData } = user;
@@ -411,6 +414,28 @@ const removeProfilePicture = async ({ id }) => {
     }
 };
 
+const addProfilePicture = async ({ id, profilePicture }) => {
+    try {
+        const updatedUser = await prisma.user.update({
+            where: { id: parseInt(id, 10) },
+            data: { profilePicture },
+        });
+
+        return {
+            status: HTTP_STATUS_CODES.OK,
+            data: {
+                message: SUCCESS_MESSAGES.USER_UPDATED,
+                user: updatedUser,
+            },
+        };
+    } catch (error) {
+        console.error('Erro ao adicionar foto de perfil:', error.message);
+        return {
+            status: HTTP_STATUS_CODES.INTERNAL_SERVER_ERROR,
+            data: { message: ERROR_MESSAGES.ERROR_UPDATING_USER },
+        };
+    }
+};
 
 module.exports = {
     createUser,
@@ -424,4 +449,5 @@ module.exports = {
     resetPassword,
     updateProfilePicture,
     removeProfilePicture,
+    addProfilePicture
 };

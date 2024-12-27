@@ -10,7 +10,8 @@ const {
     forgotPassword,
     resetPassword,
     updateProfilePicture,
-    removeProfilePicture
+    removeProfilePicture,
+    addProfilePicture
 } = require('./controllers/userController');
 const authenticateUser = require('./middlewares/authMiddlewares');
 const { ERROR_MESSAGES, HTTP_STATUS_CODES } = require('./utils/enum');
@@ -228,6 +229,13 @@ router.put('/user/:id/profile-picture', async (req, res) => {
 router.delete('/user/:id/profile-picture', async (req, res) => {
     const { id } = req.params;
     const { status, data } = await removeProfilePicture({ id });
+    return res.status(status).json(data);
+});
+
+router.post('/user/:id/profile-picture', async (req, res) => {
+    const { id } = req.params;
+    const { profilePicture } = req.body;
+    const { status, data } = await addProfilePicture({ id, profilePicture });
     return res.status(status).json(data);
 });
 
