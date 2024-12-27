@@ -234,34 +234,67 @@ const getUserById = async ({ id }) => {
     }
 };
 
-const updateUser = async ({ id, nome, email, estado, sobre, profilePicture }) => {
+const updateUser = async ({
+    id,
+    nome,
+    email,
+    estado,
+    sobre,
+    profilePicture,
+    senha, // Adicionando a senha como parâmetro
+  }) => {
     try {
-        const updatedUser = await prisma.user.update({
-            where: { id: parseInt(id, 10) },
-            data: {
-                ...(nome && { nome }),
-                ...(email && { email }),
-                ...(estado && { estado }),
-                ...(sobre && { sobre }),
-                ...(profilePicture && { profilePicture }), // Atualizando opcionalmente o campo profilePicture
-            },
-        });
-
-        return {
-            status: HTTP_STATUS_CODES.OK,
-            data: {
-                message: SUCCESS_MESSAGES.USER_UPDATED,
-                user: updatedUser,
-            },
-        };
+      const updatedUser = await prisma.user.update({
+        where: { id: parseInt(id, 10) },
+        data: {
+          ...(nome && { nome }),
+          ...(email && { email }),
+          ...(estado && { estado }),
+          ...(sobre && { sobre }),
+          ...(profilePicture && { profilePicture }),
+          ...(senha && { senha }), // Atualizando a senha se fornecida
+        },
+        select: {  // Selecionando somente os campos desejados
+          nome: true,
+          email: true,
+          estado: true,
+          sobre: true,
+          senha: true, // Incluindo a senha
+        },
+      });
+  
+      // Gerar novo token JWT com as informações atualizadas
+      const newToken = jwt.sign(
+        {
+          id: updatedUser.id,
+          nome: updatedUser.nome,
+          email: updatedUser.email,
+          estado: updatedUser.estado,
+          sobre: updatedUser.sobre,
+          senha: updatedUser.senha,  // Adicionando a senha no payload do token
+        },
+        process.env.JWT_SECRET,
+        { expiresIn: "1h" } // Expira em 1 hora
+      );
+  
+      return {
+        status: HTTP_STATUS_CODES.OK,
+        data: {
+          message: SUCCESS_MESSAGES.USER_UPDATED,
+          user: updatedUser,
+          token: newToken, // Retorna o novo token
+        },
+      };
     } catch (error) {
-        console.error('Erro ao atualizar usuário:', error.message);
-        return {
-            status: HTTP_STATUS_CODES.INTERNAL_SERVER_ERROR,
-            data: { message: ERROR_MESSAGES.USER_NOT_UPDATE },
-        };
+      console.error("Erro ao atualizar usuário:", error.message);
+      return {
+        status: HTTP_STATUS_CODES.INTERNAL_SERVER_ERROR,
+        data: { message: ERROR_MESSAGES.USER_NOT_UPDATE },
+      };
     }
-};
+  };
+  
+  
 
 const deleteUser = async ({ id }) => {
     try {

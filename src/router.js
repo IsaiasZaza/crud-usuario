@@ -15,9 +15,6 @@ const { ERROR_MESSAGES, HTTP_STATUS_CODES } = require('./utils/enum');
 const { MercadoPagoConfig, Payment } = require('mercadopago');
 const axios = require('axios');
 
-
-
-
 const router = express.Router();
 
 const client = new MercadoPagoConfig({
