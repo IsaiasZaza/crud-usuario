@@ -33,7 +33,7 @@ const createUser = async ({ nome, email, senha, role = 'ALUNO' }) => {
                 role: role.toUpperCase(),
                 estado: 'Brasília-DF',
                 sobre: 'Bem-vindo(a) à Cetma', 
-                profilePicture: 'https://cdn.pixabay.com/photo/2015/10/05/22/37/blank-profile-picture-973460_960_720.png',
+                profilePicture: '',
             },
         });
 
@@ -375,11 +375,15 @@ const updateProfilePicture = async ({ id, profilePicture }) => {
             data: { profilePicture },
         });
 
+        // Gera um novo token com as informações atualizadas do usuário
+        const newToken = generateToken({ id: updatedUser.id, ...updatedUser });
+
         return {
             status: HTTP_STATUS_CODES.OK,
             data: {
                 message: SUCCESS_MESSAGES.USER_UPDATED,
                 user: updatedUser,
+                token: newToken, // Inclui o token atualizado na resposta
             },
         };
     } catch (error) {
@@ -393,16 +397,20 @@ const updateProfilePicture = async ({ id, profilePicture }) => {
 
 const removeProfilePicture = async ({ id }) => {
     try {
-        const updatedUser = await prisma.user.update({
+        const updatedUser = await prisma.user.delete({
             where: { id: parseInt(id, 10) },
-            data: { profilePicture: 'https://cdn.pixabay.com/photo/2015/10/05/22/37/blank-profile-picture-973460_960_720.png' },
+            data: { profilePicture: '' },
         });
+
+        // Gera um novo token com as informações atualizadas do usuário
+        const newToken = generateToken({ id: updatedUser.id, ...updatedUser });
 
         return {
             status: HTTP_STATUS_CODES.OK,
             data: {
-                message: SUCCESS_MESSAGES.USER_UPDATED,
+                message: 'deletado com sucesso',
                 user: updatedUser,
+                token: newToken, // Inclui o token atualizado na resposta
             },
         };
     } catch (error) {
@@ -421,11 +429,15 @@ const addProfilePicture = async ({ id, profilePicture }) => {
             data: { profilePicture },
         });
 
+        // Gera um novo token com as informações atualizadas do usuário
+        const newToken = generateToken({ id: updatedUser.id, ...updatedUser });
+
         return {
             status: HTTP_STATUS_CODES.OK,
             data: {
                 message: SUCCESS_MESSAGES.USER_UPDATED,
                 user: updatedUser,
+                token: newToken, // Inclui o token atualizado na resposta
             },
         };
     } catch (error) {

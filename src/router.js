@@ -17,6 +17,8 @@ const authenticateUser = require('./middlewares/authMiddlewares');
 const { ERROR_MESSAGES, HTTP_STATUS_CODES } = require('./utils/enum');
 const { MercadoPagoConfig, Payment } = require('mercadopago');
 const axios = require('axios');
+const upload = require('../multerConfig'); // Middleware configurado com multer
+
 
 
 
@@ -162,8 +164,8 @@ router.get('/user/:id', authenticateUser, async (req, res) => {
 
 router.put('/user/:id', authenticateUser, async (req, res) => {
     const { id } = req.params;
-    const { nome, email } = req.body;
-    const { status, data } = await updateUser({ id, nome, email });
+    const { nome, email, sobre, estado,  } = req.body;
+    const { status, data } = await updateUser({ id, nome, email, sobre, estado });
     return res.status(status).json(data);
 });
 
@@ -218,11 +220,25 @@ router.post('/reset-password', async (req, res) => {
     return res.status(status).json(data);
 });
 
-router.put('/user/:id/profile-picture', async (req, res) => {
+router.put('/user/:id/profile-picture', upload.single('profilePicture'), async (req, res) => {
     const { id } = req.params;
-    const { profilePicture } = req.body;
-    const { status, data } = await updateProfilePicture({ id, profilePicture });
-    return res.status(status).json(data);
+
+    try {
+        // Verifica se o arquivo foi enviado
+        if (!req.file) {
+            return res.status(400).json({ message: 'Arquivo não enviado.' });
+        }
+
+        // Caminho do arquivo salvo no servidor
+        const profilePicture = `/uploads/${req.file.filename}`;
+
+        // Atualiza no banco de dados
+        const { status, data } = await updateProfilePicture({ id, profilePicture });
+        return res.status(status).json(data);
+    } catch (error) {
+        console.error('Erro ao atualizar foto de perfil:', error);
+        return res.status(500).json({ message: 'Erro interno do servidor.' });
+    }
 });
 
 // Rota para remover a foto de perfil
