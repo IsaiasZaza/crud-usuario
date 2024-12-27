@@ -31,8 +31,9 @@ const createUser = async ({ nome, email, senha, role = 'ALUNO' }) => {
                 email,
                 senha: hashedPassword,
                 role: role.toUpperCase(),
-                estado: 'Brasília-DF', // Valor padrão para estado
-                sobre: 'Bem-vindo(a) à Cetma', // Valor padrão para sobre
+                estado: 'Brasília-DF',
+                sobre: 'Bem-vindo(a) à Cetma', 
+                profilePicture: 'https://cdn.pixabay.com/photo/2015/10/05/22/37/blank-profile-picture-973460_960_720.png',
             },
         });
 
@@ -40,7 +41,10 @@ const createUser = async ({ nome, email, senha, role = 'ALUNO' }) => {
             id: newUser.id,
             email: newUser.email,
             nome: newUser.nome,
-            role: newUser.role
+            role: newUser.role,
+            estado: newUser.estado,
+            sobre: newUser.sobre,
+            profilePicture: newUser.profilePicture,
         });
 
         return {
@@ -52,8 +56,9 @@ const createUser = async ({ nome, email, senha, role = 'ALUNO' }) => {
                     nome: newUser.nome,
                     email: newUser.email,
                     role: newUser.role,
-                    estado: newUser.estado, // Incluindo estado no retorno
-                    sobre: newUser.sobre,   // Incluindo sobre no retorno
+                    estado: newUser.estado, 
+                    sobre: newUser.sobre,  
+                    profilePicture: newUser.profilePicture,
                 },
                 token
             },
@@ -360,6 +365,52 @@ const resetPassword = async ({ token, password }) => {
     }
 };
 
+const updateProfilePicture = async ({ id, profilePicture }) => {
+    try {
+        const updatedUser = await prisma.user.update({
+            where: { id: parseInt(id, 10) },
+            data: { profilePicture },
+        });
+
+        return {
+            status: HTTP_STATUS_CODES.OK,
+            data: {
+                message: SUCCESS_MESSAGES.USER_UPDATED,
+                user: updatedUser,
+            },
+        };
+    } catch (error) {
+        console.error('Erro ao atualizar foto de perfil:', error.message);
+        return {
+            status: HTTP_STATUS_CODES.INTERNAL_SERVER_ERROR,
+            data: { message: ERROR_MESSAGES.ERROR_UPDATING_USER },
+        };
+    }
+};
+
+const removeProfilePicture = async ({ id }) => {
+    try {
+        const updatedUser = await prisma.user.update({
+            where: { id: parseInt(id, 10) },
+            data: { profilePicture: 'https://cdn.pixabay.com/photo/2015/10/05/22/37/blank-profile-picture-973460_960_720.png' },
+        });
+
+        return {
+            status: HTTP_STATUS_CODES.OK,
+            data: {
+                message: SUCCESS_MESSAGES.USER_UPDATED,
+                user: updatedUser,
+            },
+        };
+    } catch (error) {
+        console.error('Erro ao remover foto de perfil:', error.message);
+        return {
+            status: HTTP_STATUS_CODES.INTERNAL_SERVER_ERROR,
+            data: { message: ERROR_MESSAGES.ERROR_UPDATING_USER },
+        };
+    }
+};
+
 
 module.exports = {
     createUser,
@@ -371,4 +422,6 @@ module.exports = {
     loginUser,
     forgotPassword,
     resetPassword,
+    updateProfilePicture,
+    removeProfilePicture,
 };

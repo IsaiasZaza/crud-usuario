@@ -9,6 +9,8 @@ const {
     loginUser,
     forgotPassword,
     resetPassword,
+    updateProfilePicture,
+    removeProfilePicture
 } = require('./controllers/userController');
 const authenticateUser = require('./middlewares/authMiddlewares');
 const { ERROR_MESSAGES, HTTP_STATUS_CODES } = require('./utils/enum');
@@ -83,7 +85,7 @@ router.post('/pagamentoatualizado', async (req, res) => {
     }
 });
 
-   
+
 
 router.post('/user', async (req, res) => {
     const { nome, email, senha, role } = req.body;
@@ -99,9 +101,9 @@ router.post('/create-payment', async (req, res) => {
         console.log('Dados recebidos:', { title, quantity, unit_price, payment_method_id, payer });
 
         if (!title || !quantity || !unit_price || !payment_method_id || !payer) {
-            return res.status(400).json({ 
-                status: 'error', 
-                message: 'Parâmetros inválidos' 
+            return res.status(400).json({
+                status: 'error',
+                message: 'Parâmetros inválidos'
             });
         }
 
@@ -212,6 +214,20 @@ router.post('/reset-password', async (req, res) => {
     }
 
     const { status, data } = await resetPassword({ token, password });
+    return res.status(status).json(data);
+});
+
+router.put('/user/:id/profile-picture', async (req, res) => {
+    const { id } = req.params;
+    const { profilePicture } = req.body;
+    const { status, data } = await updateProfilePicture({ id, profilePicture });
+    return res.status(status).json(data);
+});
+
+// Rota para remover a foto de perfil
+router.delete('/user/:id/profile-picture', async (req, res) => {
+    const { id } = req.params;
+    const { status, data } = await removeProfilePicture({ id });
     return res.status(status).json(data);
 });
 
