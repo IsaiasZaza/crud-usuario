@@ -13,8 +13,7 @@ const {
 const authenticateUser = require('./middlewares/authMiddlewares');
 const { ERROR_MESSAGES, HTTP_STATUS_CODES } = require('./utils/enum');
 const { MercadoPagoConfig, Payment } = require('mercadopago');
-const axios = require('axios');
-
+const { createCourse, getCourses, getCourseById, updateCourse, deleteCourse, createCourseWithSubcourses } = require('./controllers/courseController');
 const router = express.Router();
 
 const client = new MercadoPagoConfig({
@@ -23,55 +22,11 @@ const client = new MercadoPagoConfig({
 
 require('dotenv').config();
 
-
-
 router.post('/user', async (req, res) => {
     const { nome, email, senha, role } = req.body;
     const { status, data } = await createUser({ nome, email, senha, role });
     return res.status(status).json(data);
 });
-
-router.post('/create-payment', async (req, res) => {
-    try {
-        const { title, quantity, unit_price, payment_method_id, payer } = req.body;
-
-        // Log para depuração
-        console.log('Dados recebidos:', { title, quantity, unit_price, payment_method_id, payer });
-
-        if (!title || !quantity || !unit_price || !payment_method_id || !payer) {
-            return res.status(400).json({
-                status: 'error',
-                message: 'Parâmetros inválidos'
-            });
-        }
-
-        const paymentData = {
-            transaction_amount: quantity * unit_price,
-            description: title,
-            payment_method_id,
-            payer,
-        };
-
-        console.log('Dados enviados ao Mercado Pago:', paymentData);
-
-        const payment = new Payment(client);
-        const response = await payment.create({ body: paymentData });
-
-        return res.status(201).json({
-            status: 'success',
-            paymentId: response.payer.id,
-            status_detail: response.money_release_status,
-        });
-    } catch (error) {
-        console.error('Erro ao criar pagamento:', error);
-        return res.status(error.status || 500).json({
-            status: 'error',
-            message: 'Não foi possível processar o pagamento.',
-            error: error.message,
-            cause: error.cause,
-        });
-    }
-})
 
 router.post('/login', async (req, res) => {
     const { email, senha, role } = req.body;
@@ -99,7 +54,7 @@ router.get('/user/:id', authenticateUser, async (req, res) => {
 
 router.put('/user/:id', authenticateUser, async (req, res) => {
     const { id } = req.params;
-    const { nome, email, sobre, estado,  } = req.body;
+    const { nome, email, sobre, estado, } = req.body;
     const { status, data } = await updateUser({ id, nome, email, sobre, estado });
     return res.status(status).json(data);
 });
@@ -154,5 +109,62 @@ router.post('/reset-password', async (req, res) => {
     const { status, data } = await resetPassword({ token, password });
     return res.status(status).json(data);
 });
+
+router.post('/', async (req, res) => {
+    const result = await createCourse(req.body);
+    res.status(result.status).json(result.data);
+});
+
+router.get('/cursos', async (req, res) => {
+    const result = await getCourses();
+    res.status(result.status).json(result.data);
+});
+
+router.get('/curso/:id', async (req, res) => {
+    const result = await getCourseById(req.params);
+    res.status(result.status).json(result.data);
+});
+
+router.put('/curso/:id', async (req, res) => {
+    const result = await updateCourse({ id: req.params.id, ...req.body });
+    res.status(result.status).json(result.data);
+});
+
+router.delete('/curso/:id', async (req, res) => {
+    const result = await deleteCourse(req.params);
+    res.status(result.status).json(result.data);
+});
+
+const validateCourseInput = (body) => {
+    const { title, description, price, subCourses } = body;
+    if (!title || !description || !price || !subCourses || !Array.isArray(subCourses)) {
+      return false;
+    }
+    return true;
+  };
+  
+  // Rota para criar curso e subcursos
+  router.post('/courses', async (req, res) => {
+    const { title, description, price, subCourses } = req.body;
+  
+    // Validar entrada
+    if (!validateCourseInput(req.body)) {
+      return res.status(400).json({
+        message: "Informações insuficientes para criar o curso e subcursos.",
+      });
+    }
+  
+    try {
+      // Chamar o serviço para criar o curso e subcursos
+      const result = await createCourseWithSubcourses({ title, description, price, subCourses });
+  
+      return res.status(result.status).json(result.data);
+    } catch (error) {
+      console.error('Erro ao criar curso e subcursos:', error.message);
+      return res.status(500).json({
+        message: 'Erro ao criar curso e subcursos.',
+      });
+    }
+  });
 
 module.exports = router;

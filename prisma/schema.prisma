@@ -22,22 +22,31 @@ model User {
   email          String     @unique
   senha          String
   role           Role       @default(ALUNO)
-  estado         String     @default("Brasília-DF") // Valor padrão para estado
-  sobre          String     @default("Bem-vindo(a) à Cetma") // Valor padrão para sobre
+  estado         String     @default("Brasília-DF")
+  sobre          String     @default("Bem-vindo(a) à Cetma")
   profilePicture String?
   createdAt      DateTime   @default(now())
   purchases      Purchase[]
 }
 
 model Course {
-  id          Int        @id @default(autoincrement())
-  title       String
-  description String
-  price       Float
-  createdAt   DateTime   @default(now())
-  updatedAt   DateTime   @updatedAt
-  purchases   Purchase[]
+  id            Int        @id @default(autoincrement())
+  title         String
+  description   String
+  price         Float
+  videoUrl      String?    // URL ou caminho do vídeo (opcional)
+  coverImage    String?    // URL ou caminho da imagem de capa (opcional)
+
+  createdAt     DateTime   @default(now())
+  updatedAt     DateTime   @updatedAt
+  purchases     Purchase[]
+
+  // Relação para cursos filhos
+  parentCourseId Int?       // ID do curso pai, opcional
+  parentCourse   Course?    @relation("SubCourses", fields: [parentCourseId], references: [id])
+  subCourses     Course[]   @relation("SubCourses")
 }
+
 
 model Purchase {
   id        Int      @id @default(autoincrement())

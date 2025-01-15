@@ -22,7 +22,13 @@ const ERROR_MESSAGES = {
     SERVICE_UNAVAILABLE: 'Serviço temporariamente indisponível.',
     INVALID_ROLE: 'Função inválida. Escolha entre ADMIN, PROFESSOR ou ALUNO.',
     INVALID_REQUESTED_ROLE: 'A função solicitada para login é inválida.',
-    ROLE_NOT_ALLOWED: 'Permissão insuficiente para função solicitada.'
+    ROLE_NOT_ALLOWED: 'Permissão insuficiente para função solicitada.',
+    VIDEO_NOT_FOUND: 'Vídeo não encontrado.',
+    VIDEOS_NOT_EXIST: 'Nenhum vídeo encontrado.',
+    ERROR_CREATING_VIDEO: 'Erro ao criar o vídeo.',
+    ERROR_UPDATING_VIDEO: 'Erro ao atualizar o vídeo.',
+    ERROR_DELETING_VIDEO: 'Erro ao deletar o vídeo.',
+    INVALID_VIDEO_DATA: 'Dados inválidos para o vídeo.',
 };
 
 const SUCCESS_MESSAGES = {
@@ -37,6 +43,11 @@ const SUCCESS_MESSAGES = {
     USER_UPDATED: 'Usuário atualizado com sucesso.',
     USER_DELETED: 'Usuário deletado com sucesso.',
     EMAIL_SENT: 'E-mail de redefinição de senha enviado com sucesso.',
+    VIDEO_CREATED: 'Vídeo criado com sucesso.',
+    VIDEO_UPDATED: 'Vídeo atualizado com sucesso.',
+    VIDEO_DELETED: 'Vídeo deletado com sucesso.',
+    VIDEO_FOUND: 'Vídeo encontrado.',
+    VIDEOS_FOUND: 'Vídeos encontrados com sucesso.',
 };
 
 const USER_ROLES_DESCRIPTION = {
