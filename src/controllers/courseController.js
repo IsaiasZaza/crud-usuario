@@ -1,15 +1,70 @@
 const { PrismaClient } = require('@prisma/client');
 const prisma = new PrismaClient();
 const { HTTP_STATUS_CODES, ERROR_MESSAGES, SUCCESS_MESSAGES } = require('../utils/enum');
+const { MercadoPagoConfig, Preference } = require('mercadopago');
 
-// Criar curso
+const client = new MercadoPagoConfig({
+    accessToken: process.env.MERCADO_PAGO_ACCESS_TOKEN
+});
+
+const preference = new Preference(client);
+
+const checkoutPro = async ({ courseId, userId }) => {
+    try {
+        const course = await prisma.course.findUnique({ where: { id: parseInt(courseId, 10) } });
+
+        if (!course) {
+            return {
+                status: 404,
+                data: { message: "Curso não encontrado" },
+            };
+        }
+
+        const user = await prisma.user.findUnique({ where: { id: parseInt(userId, 10) } });
+
+        if (!user) {
+            return {
+                status: 404,
+                data: { message: "Usuário não encontrado" },
+            };
+        }
+
+        const response = await preference.create({
+            body: {
+                items: [
+                    {
+                        title: course.title,
+                        quantity: 1,
+                        unit_price: parseFloat(course.price),
+                        description: course.description,
+                    },
+                ],
+            }
+        });
+
+        return {
+            status: 200,
+            data: {
+                message: "Link de checkout criado com sucesso!",
+                init_point: response.init_point,
+            },
+        };
+    } catch (error) {
+        console.error(`Erro ao criar checkout para courseId: ${courseId}, userId: ${userId}:`, error.message);
+        return {
+            status: 500,
+            data: { message: "Erro ao criar checkout no Mercado Pago" },
+        };
+    }
+};
+
 const createCourse = async ({ title, description, price, videoUrl, coverImage }) => {
     try {
         const newCourse = await prisma.course.create({
-            data: { 
-                title, 
-                description, 
-                price, 
+            data: {
+                title,
+                description,
+                price,
                 videoUrl,
                 coverImage, // Incluindo a imagem de capa
             },
@@ -101,7 +156,7 @@ const getCourses = async () => {
 // Buscar curso por ID
 const getCourseById = async ({ id }) => {
     try {
-        const course = await prisma.course.findUnique({ 
+        const course = await prisma.course.findUnique({
             where: { id: parseInt(id, 10) },
             include: { subCourses: true }, // Inclui os subcursos ao buscar por ID
         });
@@ -131,10 +186,10 @@ const updateCourse = async ({ id, title, description, price, videoUrl, coverImag
     try {
         const updatedCourse = await prisma.course.update({
             where: { id: parseInt(id, 10) },
-            data: { 
-                ...(title && { title }), 
-                ...(description && { description }), 
-                ...(price && { price }), 
+            data: {
+                ...(title && { title }),
+                ...(description && { description }),
+                ...(price && { price }),
                 ...(videoUrl && { videoUrl }),
                 ...(coverImage && { coverImage }), // Atualizando a imagem de capa se fornecida
             },
@@ -180,5 +235,6 @@ module.exports = {
     getCourseById,
     updateCourse,
     deleteCourse,
-    createCourseWithSubcourses
+    createCourseWithSubcourses,
+    checkoutPro
 };

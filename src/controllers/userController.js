@@ -4,9 +4,8 @@ const jwt = require('jsonwebtoken');
 const bcrypt = require('bcrypt');
 const SALT_ROUNDS = 10;
 const { generateToken } = require('../services/jwtService');
-const nodemailer = require('nodemailer'); // Para envio de emails
+const nodemailer = require('nodemailer');
 require('dotenv').config();
-const { mercadopago } = require('mercadopago');
 
 
 

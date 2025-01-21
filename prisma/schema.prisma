@@ -6,8 +6,9 @@ generator client {
 }
 
 datasource db {
-  provider = "postgresql"
-  url      = "postgresql://neondb_owner:p7AUmE6GVOFZ@ep-autumn-cell-a50jra7y.us-east-2.aws.neon.tech/neondb?sslmode=require"
+  provider = "mysql"
+  url      = "mysql://cetmae49_Admin:FjpWfMwpUajj@108.167.169.35:3306/cetmae49_cetmaBanco"
+  shadowDatabaseUrl ="mysql://cetmae49_Admin:FjpWfMwpUajj@108.167.169.35:3306/cetmae49_shadow_database"
 }
 
 enum Role {
@@ -30,23 +31,22 @@ model User {
 }
 
 model Course {
-  id            Int        @id @default(autoincrement())
-  title         String
-  description   String
-  price         Float
-  videoUrl      String?    // URL ou caminho do vídeo (opcional)
-  coverImage    String?    // URL ou caminho da imagem de capa (opcional)
+  id          Int     @id @default(autoincrement())
+  title       String
+  description String
+  price       Float
+  videoUrl    String? // URL ou caminho do vídeo (opcional)
+  coverImage  String? // URL ou caminho da imagem de capa (opcional)
 
-  createdAt     DateTime   @default(now())
-  updatedAt     DateTime   @updatedAt
-  purchases     Purchase[]
+  createdAt DateTime   @default(now())
+  updatedAt DateTime   @updatedAt
+  purchases Purchase[]
 
   // Relação para cursos filhos
-  parentCourseId Int?       // ID do curso pai, opcional
-  parentCourse   Course?    @relation("SubCourses", fields: [parentCourseId], references: [id])
-  subCourses     Course[]   @relation("SubCourses")
+  parentCourseId Int? // ID do curso pai, opcional
+  parentCourse   Course?  @relation("SubCourses", fields: [parentCourseId], references: [id])
+  subCourses     Course[] @relation("SubCourses")
 }
-
 
 model Purchase {
   id        Int      @id @default(autoincrement())

@@ -12,15 +12,23 @@ const {
 } = require('./controllers/userController');
 const authenticateUser = require('./middlewares/authMiddlewares');
 const { ERROR_MESSAGES, HTTP_STATUS_CODES } = require('./utils/enum');
-const { MercadoPagoConfig, Payment } = require('mercadopago');
-const { createCourse, getCourses, getCourseById, updateCourse, deleteCourse, createCourseWithSubcourses } = require('./controllers/courseController');
+const { createCourse, getCourses, getCourseById, updateCourse, deleteCourse, createCourseWithSubcourses, checkoutPro } = require('./controllers/courseController');
 const router = express.Router();
 
-const client = new MercadoPagoConfig({
-    accessToken: process.env.MERCADO_PAGO_ACCESS_TOKEN
-});
 
 require('dotenv').config();
+
+router.post('/checkout', async (req, res) => {
+    const { courseId, userId } = req.body;
+
+    if (!courseId || !userId) {
+        return res.status(400).json({ message: 'courseId e userId são obrigatórios.' });
+    }
+
+    const result = await checkoutPro({ courseId, userId });
+
+    res.status(result.status).json(result.data);
+});
 
 router.post('/user', async (req, res) => {
     const { nome, email, senha, role } = req.body;
@@ -138,33 +146,33 @@ router.delete('/curso/:id', async (req, res) => {
 const validateCourseInput = (body) => {
     const { title, description, price, subCourses } = body;
     if (!title || !description || !price || !subCourses || !Array.isArray(subCourses)) {
-      return false;
+        return false;
     }
     return true;
-  };
-  
-  // Rota para criar curso e subcursos
-  router.post('/courses', async (req, res) => {
+};
+
+// Rota para criar curso e subcursos
+router.post('/courses', async (req, res) => {
     const { title, description, price, subCourses } = req.body;
-  
+
     // Validar entrada
     if (!validateCourseInput(req.body)) {
-      return res.status(400).json({
-        message: "Informações insuficientes para criar o curso e subcursos.",
-      });
+        return res.status(400).json({
+            message: "Informações insuficientes para criar o curso e subcursos.",
+        });
     }
-  
+
     try {
-      // Chamar o serviço para criar o curso e subcursos
-      const result = await createCourseWithSubcourses({ title, description, price, subCourses });
-  
-      return res.status(result.status).json(result.data);
+        // Chamar o serviço para criar o curso e subcursos
+        const result = await createCourseWithSubcourses({ title, description, price, subCourses });
+
+        return res.status(result.status).json(result.data);
     } catch (error) {
-      console.error('Erro ao criar curso e subcursos:', error.message);
-      return res.status(500).json({
-        message: 'Erro ao criar curso e subcursos.',
-      });
+        console.error('Erro ao criar curso e subcursos:', error.message);
+        return res.status(500).json({
+            message: 'Erro ao criar curso e subcursos.',
+        });
     }
-  });
+});
 
 module.exports = router;

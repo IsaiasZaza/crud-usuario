@@ -1,6 +1,8 @@
 const express = require('express');
 const routes = require('./router');
 const cors = require('cors');
+const bodyParser = require("body-parser");
+
 require('dotenv').config();
 
 module.exports = (config) => {
@@ -8,6 +10,8 @@ module.exports = (config) => {
     const { port } = config;
     const app = express();
     app.use(cors()); 
+    app.use(bodyParser.json());
+
 
     app.use(express.json());
 
