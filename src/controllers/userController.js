@@ -75,6 +75,7 @@ const loginUser = async ({ email, senha, role }) => {
     try {
         const user = await prisma.user.findUnique({
             where: { email },
+            include: { courses: true },
         });
 
         if (!user) {
@@ -110,7 +111,6 @@ const loginUser = async ({ email, senha, role }) => {
             };
         }
 
-        // Gera o token
         const token = generateToken({
             id: user.id,
             nome: user.nome,
@@ -119,6 +119,7 @@ const loginUser = async ({ email, senha, role }) => {
             estado: user.estado,
             sobre: user.sobre,
             profilePicture: user.profilePicture,
+            course: user.courses,
         });
 
         const { senha: _, ...userData } = user;

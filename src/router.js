@@ -12,13 +12,18 @@ const {
 } = require('./controllers/userController');
 const authenticateUser = require('./middlewares/authMiddlewares');
 const { ERROR_MESSAGES, HTTP_STATUS_CODES } = require('./utils/enum');
-const { createCourse, getCourses, getCourseById, updateCourse, deleteCourse, createCourseWithSubcourses, checkoutPro } = require('./controllers/courseController');
+const { createCourse, getCourses, getCourseById, updateCourse, deleteCourse, createCourseWithSubcourses, checkoutPro, addCursoAoUser } = require('./controllers/courseController');
 const router = express.Router();
 
 
 require('dotenv').config();
 
-router.post('/checkout', async (req, res) => {
+router.post('/adicionarCurso', async (req, res) => { 
+    const result = await addCursoAoUser(req.body);
+    res.status(result.status).json(result.data);
+});
+
+router.post('/checkout', async (req, res) => { //checkout pro de pagamento
     const { courseId, userId } = req.body;
 
     if (!courseId || !userId) {

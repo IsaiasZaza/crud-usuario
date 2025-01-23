@@ -9,6 +9,62 @@ const client = new MercadoPagoConfig({
 
 const preference = new Preference(client);
 
+const addCursoAoUser = async ({ userId, courseId }) => {
+    try {
+        // Verificar se o curso existe
+        const course = await prisma.course.findUnique({ where: { id: parseInt(courseId, 10) } });
+        if (!course) {
+            return {
+                status: 404,
+                data: { message: "Curso não encontrado" },
+            };
+        }
+
+        // Verificar se o usuário existe
+        const user = await prisma.user.findUnique({
+            where: { id: parseInt(userId, 10) },
+            include: { courses: true },
+        });
+        if (!user) {
+            return {
+                status: 404,
+                data: { message: "Usuário não encontrado" },
+            };
+        }
+
+        // Verificar se o curso já está associado ao usuário
+        const isAlreadyAdded = user.courses.some(c => c.id === course.id);
+        if (isAlreadyAdded) {
+            return {
+                status: 400,
+                data: { message: "Curso já está associado ao usuário" },
+            };
+        }
+
+        // Adicionar o curso ao usuário
+        await prisma.user.update({
+            where: { id: parseInt(userId, 10) },
+            data: {
+                courses: {
+                    connect: { id: parseInt(courseId, 10) },
+                },
+            },
+        });
+
+        return {
+            status: 200,
+            data: { message: "Curso adicionado ao usuário com sucesso!" },
+        };
+    } catch (error) {
+        console.error(`Erro ao adicionar curso ao usuário: ${error.message}`);
+        return {
+            status: 500,
+            data: { message: "Erro ao adicionar curso ao usuário" },
+        };
+    }
+};
+
+
 const checkoutPro = async ({ courseId, userId }) => {
     try {
         const course = await prisma.course.findUnique({ where: { id: parseInt(courseId, 10) } });
@@ -236,5 +292,6 @@ module.exports = {
     updateCourse,
     deleteCourse,
     createCourseWithSubcourses,
-    checkoutPro
+    checkoutPro,
+    addCursoAoUser,
 };
