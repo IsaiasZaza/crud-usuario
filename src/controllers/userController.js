@@ -11,7 +11,7 @@ require('dotenv').config();
 
 const { ERROR_MESSAGES, HTTP_STATUS_CODES, SUCCESS_MESSAGES } = require('../utils/enum');
 
-const createUser = async ({ nome, email, senha, role = 'ALUNO' }) => {
+const createUser = async ({ nome, email, senha, role = 'ALUNO', cpf, profissao }) => {
     try {
         // Verifica se o role fornecido é válido
         const validRoles = ['ADMIN', 'PROFESSOR', 'ALUNO'];
@@ -31,8 +31,10 @@ const createUser = async ({ nome, email, senha, role = 'ALUNO' }) => {
                 senha: hashedPassword,
                 role: role.toUpperCase(),
                 estado: 'Brasília-DF',
-                sobre: 'Bem-vindo(a) à Cetma', 
+                sobre: 'Bem-vindo(a) à Cetma',
                 profilePicture: '',
+                cpf,
+                profissao
             },
         });
 
@@ -44,6 +46,8 @@ const createUser = async ({ nome, email, senha, role = 'ALUNO' }) => {
             estado: newUser.estado,
             sobre: newUser.sobre,
             profilePicture: newUser.profilePicture,
+            cpf: newUser.cpf,
+            profissao: newUser.profissao,
         });
 
         return {
@@ -55,9 +59,11 @@ const createUser = async ({ nome, email, senha, role = 'ALUNO' }) => {
                     nome: newUser.nome,
                     email: newUser.email,
                     role: newUser.role,
-                    estado: newUser.estado, 
-                    sobre: newUser.sobre,  
+                    estado: newUser.estado,
+                    sobre: newUser.sobre,
                     profilePicture: newUser.profilePicture,
+                    cpf: newUser.cpf,
+                    profissao: newUser.profissao
                 },
                 token
             },
@@ -119,6 +125,8 @@ const loginUser = async ({ email, senha, role }) => {
             estado: user.estado,
             sobre: user.sobre,
             profilePicture: user.profilePicture,
+            cpf: user.cpf,
+            profissao: user.profissao,
             course: user.courses,
         });
 
@@ -208,7 +216,10 @@ const getUsers = async () => {
 
 const getUserById = async ({ id }) => {
     try {
-        const user = await prisma.user.findUnique({ where: { id: parseInt(id, 10) } });
+        const user = await prisma.user.findUnique({
+            where: { id: parseInt(id, 10) },
+            include: { courses: true },
+        });
 
         if (!user) {
             return {
@@ -222,7 +233,8 @@ const getUserById = async ({ id }) => {
             status: HTTP_STATUS_CODES.OK,
             data: {
                 message: SUCCESS_MESSAGES.USER_FOUND,
-                user: userWithoutPassword
+                user: userWithoutPassword,
+                courses: user.courses // Retorna os cursos do usuário
             }
         };
     } catch (error) {
@@ -242,59 +254,59 @@ const updateUser = async ({
     sobre,
     profilePicture,
     senha, // Adicionando a senha como parâmetro
-  }) => {
+}) => {
     try {
-      const updatedUser = await prisma.user.update({
-        where: { id: parseInt(id, 10) },
-        data: {
-          ...(nome && { nome }),
-          ...(email && { email }),
-          ...(estado && { estado }),
-          ...(sobre && { sobre }),
-          ...(profilePicture && { profilePicture }),
-          ...(senha && { senha }), // Atualizando a senha se fornecida
-        },
-        select: {  // Selecionando somente os campos desejados
-          nome: true,
-          email: true,
-          estado: true,
-          sobre: true,
-          senha: true, // Incluindo a senha
-        },
-      });
-  
-      // Gerar novo token JWT com as informações atualizadas
-      const newToken = jwt.sign(
-        {
-          id: updatedUser.id,
-          nome: updatedUser.nome,
-          email: updatedUser.email,
-          estado: updatedUser.estado,
-          sobre: updatedUser.sobre,
-          senha: updatedUser.senha,  // Adicionando a senha no payload do token
-        },
-        process.env.JWT_SECRET,
-        { expiresIn: "1h" } // Expira em 1 hora
-      );
-  
-      return {
-        status: HTTP_STATUS_CODES.OK,
-        data: {
-          message: SUCCESS_MESSAGES.USER_UPDATED,
-          user: updatedUser,
-          token: newToken, // Retorna o novo token
-        },
-      };
+        const updatedUser = await prisma.user.update({
+            where: { id: parseInt(id, 10) },
+            data: {
+                ...(nome && { nome }),
+                ...(email && { email }),
+                ...(estado && { estado }),
+                ...(sobre && { sobre }),
+                ...(profilePicture && { profilePicture }),
+                ...(senha && { senha }), // Atualizando a senha se fornecida
+            },
+            select: {  // Selecionando somente os campos desejados
+                nome: true,
+                email: true,
+                estado: true,
+                sobre: true,
+                senha: true, // Incluindo a senha
+            },
+        });
+
+        // Gerar novo token JWT com as informações atualizadas
+        const newToken = jwt.sign(
+            {
+                id: updatedUser.id,
+                nome: updatedUser.nome,
+                email: updatedUser.email,
+                estado: updatedUser.estado,
+                sobre: updatedUser.sobre,
+                senha: updatedUser.senha,  // Adicionando a senha no payload do token
+            },
+            process.env.JWT_SECRET,
+            { expiresIn: "1h" } // Expira em 1 hora
+        );
+
+        return {
+            status: HTTP_STATUS_CODES.OK,
+            data: {
+                message: SUCCESS_MESSAGES.USER_UPDATED,
+                user: updatedUser,
+                token: newToken, // Retorna o novo token
+            },
+        };
     } catch (error) {
-      console.error("Erro ao atualizar usuário:", error.message);
-      return {
-        status: HTTP_STATUS_CODES.INTERNAL_SERVER_ERROR,
-        data: { message: ERROR_MESSAGES.USER_NOT_UPDATE },
-      };
+        console.error("Erro ao atualizar usuário:", error.message);
+        return {
+            status: HTTP_STATUS_CODES.INTERNAL_SERVER_ERROR,
+            data: { message: ERROR_MESSAGES.USER_NOT_UPDATE },
+        };
     }
-  };
-  
-  
+};
+
+
 
 const deleteUser = async ({ id }) => {
     try {

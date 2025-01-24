@@ -36,8 +36,8 @@ router.post('/checkout', async (req, res) => { //checkout pro de pagamento
 });
 
 router.post('/user', async (req, res) => {
-    const { nome, email, senha, role } = req.body;
-    const { status, data } = await createUser({ nome, email, senha, role });
+    const { nome, email, senha, role, cpf, profissao } = req.body;
+    const { status, data } = await createUser({ nome, email, senha, role, cpf, profissao });
     return res.status(status).json(data);
 });
 
