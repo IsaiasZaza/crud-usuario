@@ -22,6 +22,36 @@ const createUser = async ({ nome, email, senha, role = 'ALUNO', cpf, profissao }
             };
         }
 
+        // Validação da senha
+        const passwordRegex = /^(?=.*[!@#$%^&*])[A-Za-z\d!@#$%^&*]{8,}$/;
+        if (!passwordRegex.test(senha)) {
+            return {
+                status: HTTP_STATUS_CODES.BAD_REQUEST,
+                data: { message: "A senha deve ter no mínimo 8 caracteres e incluir pelo menos um caractere especial." },
+            };
+        }
+
+        // Validação do CPF
+        const cpfRegex = /^\d{11}$/;
+        if (!cpfRegex.test(cpf)) {
+            return {
+                status: HTTP_STATUS_CODES.BAD_REQUEST,
+                data: { message: "O CPF deve conter exatamente 11 números." },
+            };
+        }
+
+        // Verifica se já existe um usuário com o mesmo CPF no banco de dados
+        const existingUser = await prisma.user.findUnique({
+            where: { cpf },
+        });
+
+        if (existingUser) {
+            return {
+                status: HTTP_STATUS_CODES.CONFLICT,
+                data: { message: "Já existe um usuário cadastrado com este CPF." },
+            };
+        }
+
         const hashedPassword = await bcrypt.hash(senha, SALT_ROUNDS);
 
         const newUser = await prisma.user.create({
