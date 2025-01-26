@@ -67,8 +67,8 @@ router.get('/user/:id', authenticateUser, async (req, res) => {
 
 router.put('/user/:id', authenticateUser, async (req, res) => {
     const { id } = req.params;
-    const { nome, email, sobre, estado, } = req.body;
-    const { status, data } = await updateUser({ id, nome, email, sobre, estado });
+    const { nome, email, sobre, estado, cpf, profissao } = req.body;
+    const { status, data } = await updateUser({ id, nome, email, sobre, estado, cpf, profissao });
     return res.status(status).json(data);
 });
 
