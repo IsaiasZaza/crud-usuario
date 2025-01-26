@@ -36,7 +36,7 @@ const createUser = async ({ nome, email, senha, role = 'ALUNO', cpf, profissao }
         if (!cpfRegex.test(cpf)) {
             return {
                 status: HTTP_STATUS_CODES.BAD_REQUEST,
-                data: { message: "O CPF deve conter exatamente 11 números." },
+                data: { message: "O CPF deve ser valido" },
             };
         }
 
