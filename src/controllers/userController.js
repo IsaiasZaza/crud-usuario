@@ -319,7 +319,9 @@ const updateUser = async ({
                 email: updatedUser.email,
                 estado: updatedUser.estado,
                 sobre: updatedUser.sobre,
-                senha: updatedUser.senha,  // Adicionando a senha no payload do token
+                senha: updatedUser.senha,
+                cpf: updatedUser.cpf,
+                profissao: updatedUser.profissao,
             },
             process.env.JWT_SECRET,
             { expiresIn: "1h" } // Expira em 1 hora
