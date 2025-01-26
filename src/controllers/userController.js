@@ -283,7 +283,9 @@ const updateUser = async ({
     estado,
     sobre,
     profilePicture,
-    senha, // Adicionando a senha como parâmetro
+    senha,
+    cpf,
+    profissao
 }) => {
     try {
         const updatedUser = await prisma.user.update({
@@ -295,13 +297,17 @@ const updateUser = async ({
                 ...(sobre && { sobre }),
                 ...(profilePicture && { profilePicture }),
                 ...(senha && { senha }), // Atualizando a senha se fornecida
+                ...(cpf && { cpf }),
+                ...(profissao && { profissao }),
             },
             select: {  // Selecionando somente os campos desejados
                 nome: true,
                 email: true,
                 estado: true,
                 sobre: true,
-                senha: true, // Incluindo a senha
+                senha: true, 
+                cpf: true,
+                profissao: true,
             },
         });
 
