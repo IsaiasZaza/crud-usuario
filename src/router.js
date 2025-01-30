@@ -10,6 +10,8 @@ const {
     forgotPassword,
     resetPassword,
     updateProfilePicture,
+    addProfilePicture,
+    removeProfilePicture,
     upload,
 } = require('./controllers/userController');
 const authenticateUser = require('./middlewares/authMiddlewares');
@@ -182,7 +184,7 @@ router.post('/courses', async (req, res) => {
     }
 });
 
-router.put('/user/:id/profile-picture', authenticateUser, upload, async (req, res) => {
+router.put('/user/:id/profile-picture', upload, async (req, res) => {
     const { id } = req.params;  // Obtendo o id diretamente do parâmetro da rota
 
     // Verifique se o arquivo foi enviado
@@ -198,5 +200,20 @@ router.put('/user/:id/profile-picture', authenticateUser, upload, async (req, re
     const { status, data } = await updateProfilePicture(id, `/uploads/${req.file.filename}`);
     return res.status(status).json(data);
 });
+
+router.delete('/user/:id/profile-picture', async (req, res) => {
+    const { id } = req.params;
+    const { status, data } = await removeProfilePicture({ id });
+    return res.status(status).json(data);
+});
+
+// Rota para adicionar a foto de perfil
+router.post('/user/:id/profile-picture', async (req, res) => {
+    const { id } = req.params;
+    const { profilePicture } = req.body;
+    const { status, data } = await addProfilePicture({ id, profilePicture });
+    return res.status(status).json(data);
+});
+
 
 module.exports = router;

@@ -45,7 +45,7 @@ const createUser = async ({ nome, email, senha, role = 'ALUNO', cpf, profissao }
             return {
                 status: HTTP_STATUS_CODES.BAD_REQUEST,
                 data: { message: ERROR_MESSAGES.INVALID_ROLE },
-            };
+            }
         }
 
         // Validação da senha
@@ -332,7 +332,7 @@ const updateUser = async ({
                 email: true,
                 estado: true,
                 sobre: true,
-                senha: true, 
+                senha: true,
                 cpf: true,
                 profissao: true,
             },
@@ -478,42 +478,41 @@ const resetPassword = async ({ token, password }) => {
     }
 };
 
-const updateProfilePicture = async (req, res) => {
+const updateProfilePicture = async (id, filePath) => {
     try {
-        // Verifica se o arquivo foi enviado
-        if (!req.file) {
-            return res.status(400).json({ message: 'Nenhuma imagem foi enviada.' });
-        }
-
-        const { id } = req.params;  // Obtém o id do usuário
-        const filePath = `/uploads/${req.file.filename}`;  // Caminho do arquivo
-
         // Atualiza o perfil do usuário no banco de dados
         const updatedUser = await prisma.user.update({
             where: { id: parseInt(id, 10) },
             data: { profilePicture: filePath }  // Atualiza a foto de perfil
         });
- // Gera um novo token com os dados do usuário atualizado
+
+        // Gera um novo token com os dados do usuário atualizado
         const newToken = generateToken({ id: updatedUser.id, ...updatedUser });
 
         // Retorna a resposta com os dados atualizados
-        return res.status(200).json({
-            message: 'Foto de perfil atualizada com sucesso!',
-            user: updatedUser,
-            token: newToken
-        });
+        return {
+            status: HTTP_STATUS_CODES.OK,
+            data: {
+                message: 'Foto de perfil atualizada com sucesso.',
+                user: updatedUser,
+                token: newToken,
+            },
+        };
     } catch (error) {
-        console.error('Erro ao atualizar foto de perfil:', error);
-        return res.status(500).json({ message: 'Erro interno do servidor.' });
+        console.error('Erro ao atualizar a foto de perfil:', error);
+        return {
+            status: HTTP_STATUS_CODES.INTERNAL_SERVER_ERROR,
+            data: { message: ERROR_MESSAGES.ERROR_INTERNAL_SERVER },
+        };
     }
 };
-       
+
 
 const removeProfilePicture = async ({ id }) => {
     try {
-        const updatedUser = await prisma.user.delete({
-            where: { id: parseInt(id, 10) },
-            data: { profilePicture: '' },
+        const updatedUser = await prisma.user.update({
+            where: { id: parseInt(id, 10) }, // Garante que o ID seja um número
+            data: { profilePicture: null },  // Define a foto como null
         });
 
         // Gera um novo token com as informações atualizadas do usuário
@@ -522,9 +521,9 @@ const removeProfilePicture = async ({ id }) => {
         return {
             status: HTTP_STATUS_CODES.OK,
             data: {
-                message: 'deletado com sucesso',
+                message: 'Foto de perfil removida com sucesso',
                 user: updatedUser,
-                token: newToken, // Inclui o token atualizado na resposta
+                token: newToken, // Retorna o token atualizado
             },
         };
     } catch (error) {

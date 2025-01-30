@@ -15,7 +15,7 @@ module.exports = (config) => {
     app.use(express.json());
 
     // Servir arquivos estáticos (imagens de perfil)
-    app.use('/uploads', express.static(path.join(__dirname, 'uploads')));
+    app.use('/uploads', express.static(path.resolve('uploads')));
 
     app.use('/api', routes);
 
