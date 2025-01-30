@@ -270,7 +270,22 @@ const updateCourse = async ({ id, title, description, price, videoUrl, coverImag
 // Deletar curso
 const deleteCourse = async ({ id }) => {
     try {
-        await prisma.course.delete({ where: { id: parseInt(id, 10) } });
+        const courseId = parseInt(id, 10);
+
+        // Verifica se existem cursos filhos com parentId igual ao ID do curso que está sendo deletado
+        const subCourses = await prisma.course.findMany({
+            where: { parentCourseId: courseId }
+        });
+
+        // Se houver cursos filhos, deleta todos primeiro
+        if (subCourses.length > 0) {
+            await prisma.course.deleteMany({
+                where: { parentCourseId: courseId }
+            });
+        }
+
+        // Agora deleta o curso principal
+        await prisma.course.delete({ where: { id: courseId } });
 
         return {
             status: HTTP_STATUS_CODES.NO_CONTENT,
@@ -284,6 +299,7 @@ const deleteCourse = async ({ id }) => {
         };
     }
 };
+
 
 module.exports = {
     createCourse,

@@ -147,7 +147,7 @@ const loginUser = async ({ email, senha, role }) => {
             };
         }
 
-        const token = generateToken({
+        const token = jwt.sign({
             id: user.id,
             nome: user.nome,
             email: user.email,
@@ -158,7 +158,7 @@ const loginUser = async ({ email, senha, role }) => {
             cpf: user.cpf,
             profissao: user.profissao,
             course: user.courses,
-        });
+        }, process.env.JWT_SECRET, { expiresIn: '2h' });
 
         const { senha: _, ...userData } = user;
 
@@ -324,7 +324,7 @@ const updateUser = async ({
                 profissao: updatedUser.profissao,
             },
             process.env.JWT_SECRET,
-            { expiresIn: "1h" } // Expira em 1 hora
+            { expiresIn: "2h" } // Expira em 2 hora
         );
 
         return {
