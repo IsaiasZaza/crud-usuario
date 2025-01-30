@@ -5,9 +5,35 @@ const bcrypt = require('bcrypt');
 const SALT_ROUNDS = 10;
 const { generateToken } = require('../services/jwtService');
 const nodemailer = require('nodemailer');
+const multer = require('multer');
+const path = require('path');
+const fs = require('fs');
 require('dotenv').config();
 
+// Configuração do multer para armazenar na pasta 'uploads/'
+const storage = multer.diskStorage({
+    destination: (req, file, cb) => {
+        const uploadDir = 'uploads/';
+        if (!fs.existsSync(uploadDir)) {
+            fs.mkdirSync(uploadDir, { recursive: true });
+        }
+        cb(null, uploadDir);
+    },
+    filename: (req, file, cb) => {
+        const uniqueName = `${Date.now()}-${file.originalname}`;
+        cb(null, uniqueName);
+    }
+});
 
+const upload = multer({
+    storage,
+    limits: { fileSize: 2 * 1024 * 1024 }, // Limite de 2MB por imagem
+    fileFilter: (req, file, cb) => {
+        const allowedTypes = /jpeg|jpg|png/;
+        const isValidType = allowedTypes.test(path.extname(file.originalname).toLowerCase()) && allowedTypes.test(file.mimetype);
+        isValidType ? cb(null, true) : cb(new Error('Apenas imagens JPEG, JPG e PNG são permitidas.'));
+    }
+}).single('profilePicture'); // Recebe apenas um arquivo por vez
 
 const { ERROR_MESSAGES, HTTP_STATUS_CODES, SUCCESS_MESSAGES } = require('../utils/enum');
 
@@ -106,6 +132,7 @@ const createUser = async ({ nome, email, senha, role = 'ALUNO', cpf, profissao }
         };
     }
 };
+
 
 const loginUser = async ({ email, senha, role }) => {
     try {
@@ -451,32 +478,36 @@ const resetPassword = async ({ token, password }) => {
     }
 };
 
-const updateProfilePicture = async ({ id, profilePicture }) => {
+const updateProfilePicture = async (req, res) => {
     try {
+        // Verifica se o arquivo foi enviado
+        if (!req.file) {
+            return res.status(400).json({ message: 'Nenhuma imagem foi enviada.' });
+        }
+
+        const { id } = req.params;  // Obtém o id do usuário
+        const filePath = `/uploads/${req.file.filename}`;  // Caminho do arquivo
+
+        // Atualiza o perfil do usuário no banco de dados
         const updatedUser = await prisma.user.update({
             where: { id: parseInt(id, 10) },
-            data: { profilePicture },
+            data: { profilePicture: filePath }  // Atualiza a foto de perfil
         });
-
-        // Gera um novo token com as informações atualizadas do usuário
+ // Gera um novo token com os dados do usuário atualizado
         const newToken = generateToken({ id: updatedUser.id, ...updatedUser });
 
-        return {
-            status: HTTP_STATUS_CODES.OK,
-            data: {
-                message: SUCCESS_MESSAGES.USER_UPDATED,
-                user: updatedUser,
-                token: newToken, // Inclui o token atualizado na resposta
-            },
-        };
+        // Retorna a resposta com os dados atualizados
+        return res.status(200).json({
+            message: 'Foto de perfil atualizada com sucesso!',
+            user: updatedUser,
+            token: newToken
+        });
     } catch (error) {
-        console.error('Erro ao atualizar foto de perfil:', error.message);
-        return {
-            status: HTTP_STATUS_CODES.INTERNAL_SERVER_ERROR,
-            data: { message: ERROR_MESSAGES.ERROR_UPDATING_USER },
-        };
+        console.error('Erro ao atualizar foto de perfil:', error);
+        return res.status(500).json({ message: 'Erro interno do servidor.' });
     }
 };
+       
 
 const removeProfilePicture = async ({ id }) => {
     try {
@@ -544,5 +575,6 @@ module.exports = {
     resetPassword,
     updateProfilePicture,
     removeProfilePicture,
-    addProfilePicture
+    addProfilePicture,
+    upload,
 };

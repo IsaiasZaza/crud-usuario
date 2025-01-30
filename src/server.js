@@ -2,18 +2,20 @@ const express = require('express');
 const routes = require('./router');
 const cors = require('cors');
 const bodyParser = require("body-parser");
+const path = require('path');
 
 require('dotenv').config();
 
 module.exports = (config) => {
-
     const { port } = config;
     const app = express();
+
     app.use(cors()); 
     app.use(bodyParser.json());
-
-
     app.use(express.json());
+
+    // Servir arquivos estáticos (imagens de perfil)
+    app.use('/uploads', express.static(path.join(__dirname, 'uploads')));
 
     app.use('/api', routes);
 

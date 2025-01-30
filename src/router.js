@@ -9,6 +9,8 @@ const {
     loginUser,
     forgotPassword,
     resetPassword,
+    updateProfilePicture,
+    upload,
 } = require('./controllers/userController');
 const authenticateUser = require('./middlewares/authMiddlewares');
 const { ERROR_MESSAGES, HTTP_STATUS_CODES } = require('./utils/enum');
@@ -18,7 +20,7 @@ const router = express.Router();
 
 require('dotenv').config();
 
-router.post('/adicionarCurso', async (req, res) => { 
+router.post('/adicionarCurso', async (req, res) => {
     const result = await addCursoAoUser(req.body);
     res.status(result.status).json(result.data);
 });
@@ -178,6 +180,23 @@ router.post('/courses', async (req, res) => {
             message: 'Erro ao criar curso e subcursos.',
         });
     }
+});
+
+router.put('/user/:id/profile-picture', authenticateUser, upload, async (req, res) => {
+    const { id } = req.params;  // Obtendo o id diretamente do parâmetro da rota
+
+    // Verifique se o arquivo foi enviado
+    console.log('Arquivo recebido:', req.file);
+
+    if (!req.file) {
+        return res.status(400).json({ message: 'Nenhuma imagem foi enviada.' });
+    }
+
+    console.log('Atualizando foto de perfil para o usuário:', id);
+
+    // Atualize a foto de perfil no banco de dados
+    const { status, data } = await updateProfilePicture(id, `/uploads/${req.file.filename}`);
+    return res.status(status).json(data);
 });
 
 module.exports = router;
