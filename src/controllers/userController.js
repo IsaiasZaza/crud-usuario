@@ -8,9 +8,10 @@ const nodemailer = require('nodemailer');
 const multer = require('multer');
 const path = require('path');
 const fs = require('fs');
+const redis = require('redis');
+const client = redis.createClient();
 require('dotenv').config();
 
-// Configuração do multer para armazenar na pasta 'uploads/'
 const storage = multer.diskStorage({
     destination: (req, file, cb) => {
         const uploadDir = 'uploads/';
@@ -36,6 +37,18 @@ const upload = multer({
 }).single('profilePicture'); // Recebe apenas um arquivo por vez
 
 const { ERROR_MESSAGES, HTTP_STATUS_CODES, SUCCESS_MESSAGES } = require('../utils/enum');
+
+const logoutUser = async (req, res) => {
+    const token = req.headers?.authorization?.split(' ')[1]; // Obtém o token do header
+
+    if (!token) {
+        return res.status(401).json({ message: 'Token não fornecido' });
+    }
+
+    client.setEx(token, 3600, 'revoked'); // Expira o token após 1 hora
+
+    return res.status(200).json({ message: 'Logout realizado com sucesso' });
+};
 
 const createUser = async ({ nome, email, senha, role = 'ALUNO', cpf, profissao }) => {
     try {
@@ -575,5 +588,6 @@ module.exports = {
     updateProfilePicture,
     removeProfilePicture,
     addProfilePicture,
+    logoutUser,
     upload,
 };
