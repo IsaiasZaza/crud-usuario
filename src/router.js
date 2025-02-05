@@ -19,7 +19,7 @@ const {
 const authenticateUser = require('./middlewares/authMiddlewares');
 const { ERROR_MESSAGES, HTTP_STATUS_CODES } = require('./utils/enum');
 const { createCourse, getCourses, getCourseById, updateCourse, deleteCourse, createCourseWithSubcourses, checkoutPro, addCursoAoUser } = require('./controllers/courseController');
-const { createEbook, getAllEbooks, getEbookById, updateEbook, deleteEbook } = requuire('./controllers/ebookController');
+const { createEbook, getAllEbooks, getEbookById, updateEbook, deleteEbook } = require('./controllers/ebookController');
 const router = express.Router();
 
 
@@ -45,7 +45,7 @@ router.delete('/ebook/:id', async (req, res) => {
     res.status(result.status).json(result.data);
 });
 
-router.get('/ebook/:id', async (req, res) => {=
+router.get('/ebook/:id', async (req, res) => {
     const result = await getEbookById(req.params);
     res.status(result.status).json(result.data);
 });
