@@ -13,15 +13,42 @@ const {
     addProfilePicture,
     removeProfilePicture,
     logoutUser,
+    removeCursoDoUser,
     upload,
 } = require('./controllers/userController');
 const authenticateUser = require('./middlewares/authMiddlewares');
 const { ERROR_MESSAGES, HTTP_STATUS_CODES } = require('./utils/enum');
 const { createCourse, getCourses, getCourseById, updateCourse, deleteCourse, createCourseWithSubcourses, checkoutPro, addCursoAoUser } = require('./controllers/courseController');
+const { createEbook, getAllEbooks, getEbookById, updateEbook, deleteEbook } = requuire('./controllers/ebookController');
 const router = express.Router();
 
 
 require('dotenv').config();
+
+router.post('/ebook', async (req, res) => {
+    const result = await createEbook(req.body);
+    res.status(result.status).json(result.data);
+})
+
+router.get('/ebooks', async (req, res) => {
+    const result = await getAllEbooks();
+    res.status(result.status).json(result.data);
+});
+
+router.put('/ebook/:id', async (req, res) => {
+    const result = await updateEbook({ id: req.params.id, ...req.body });
+    res.status(result.status).json(result.data);
+});
+
+router.delete('/ebook/:id', async (req, res) => {
+    const result = await deleteEbook(req.params);
+    res.status(result.status).json(result.data);
+});
+
+router.get('/ebook/:id', async (req, res) => {=
+    const result = await getEbookById(req.params);
+    res.status(result.status).json(result.data);
+});
 
 router.post('/adicionarCurso', async (req, res) => {
     const result = await addCursoAoUser(req.body);
@@ -185,7 +212,7 @@ router.post('/courses', async (req, res) => {
 });
 
 router.put('/user/:id/profile-picture', upload, async (req, res) => {
-    const { id } = req.params; 
+    const { id } = req.params;
 
     if (!req.file) {
         return res.status(400).json({ message: 'Nenhuma imagem foi enviada.' });
@@ -211,6 +238,11 @@ router.post('/user/:id/profile-picture', async (req, res) => {
 router.post('/user/logout', async (req, res) => {
     const { status, data } = await logoutUser(req, res);
     return res.status(status).json(data);
+});
+
+router.post('/removerCurso', async (req, res) => {
+    const result = await removeCursoDoUser(req.body);
+    res.status(result.status).json(result.data);
 });
 
 module.exports = router;

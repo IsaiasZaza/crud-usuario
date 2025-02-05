@@ -144,14 +144,14 @@ const createCourse = async ({ title, description, price, videoUrl, coverImage })
 
 const createCourseWithSubcourses = async ({ title, description, price, videoUrl, coverImage, subCourses }) => {
     try {
-        // Criação do curso principal
+    
         const course = await prisma.course.create({
             data: {
                 title,
                 description,
                 price,
                 videoUrl,
-                coverImage, // Incluindo a imagem de capa
+                coverImage,
             },
         });
 
@@ -300,6 +300,60 @@ const deleteCourse = async ({ id }) => {
     }
 };
 
+const removeCursoDoUser = async ({ userId, courseId }) => {
+    try {
+        // Verificar se o curso existe
+        const course = await prisma.course.findUnique({ where: { id: parseInt(courseId, 10) } });
+        if (!course) {
+            return {
+                status: 404,
+                data: { message: "Curso não encontrado" },
+            };
+        }
+
+        // Verificar se o usuário existe
+        const user = await prisma.user.findUnique({
+            where: { id: parseInt(userId, 10) },
+            include: { courses: true },
+        });
+        if (!user) {
+            return {
+                status: 404,
+                data: { message: "Usuário não encontrado" },
+            };
+        }
+
+        // Verificar se o curso está associado ao usuário
+        const isAssociated = user.courses.some(c => c.id === course.id);
+        if (!isAssociated) {
+            return {
+                status: 400,
+                data: { message: "Curso não está associado ao usuário" },
+            };
+        }
+
+        // Remover o curso do usuário
+        await prisma.user.update({
+            where: { id: parseInt(userId, 10) },
+            data: {
+                courses: {
+                    disconnect: { id: parseInt(courseId, 10) },
+                },
+            },
+        });
+
+        return {
+            status: 200,
+            data: { message: "Curso removido do usuário com sucesso!" },
+        };
+    } catch (error) {
+        console.error(`Erro ao remover curso do usuário: ${error.message}`);
+        return {
+            status: 500,
+            data: { message: "Erro ao remover curso do usuário" },
+        };
+    }
+};
 
 module.exports = {
     createCourse,
@@ -310,4 +364,5 @@ module.exports = {
     createCourseWithSubcourses,
     checkoutPro,
     addCursoAoUser,
+    removeCursoDoUser
 };

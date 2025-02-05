@@ -60,3 +60,14 @@ model Purchase {
   user   User   @relation(fields: [userId], references: [id])
   course Course @relation(fields: [courseId], references: [id])
 }
+
+model Ebook {
+  id          Int      @id @default(autoincrement())
+  title       String
+  description String
+  autor      String
+  fileUrl     String  // URL do arquivo do eBook para download
+  imageEbook  String? // URL da imagem de capa (opcional)
+  createdAt   DateTime @default(now())
+  updatedAt   DateTime @updatedAt
+}

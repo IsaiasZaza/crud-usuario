@@ -37,6 +37,7 @@ const upload = multer({
 }).single('profilePicture'); // Recebe apenas um arquivo por vez
 
 const { ERROR_MESSAGES, HTTP_STATUS_CODES, SUCCESS_MESSAGES } = require('../utils/enum');
+const { removeCursoDoUser } = require('./courseController');
 
 const logoutUser = async (req, res) => {
     const token = req.headers?.authorization?.split(' ')[1]; // Obtém o token do header
@@ -589,5 +590,6 @@ module.exports = {
     removeProfilePicture,
     addProfilePicture,
     logoutUser,
+    removeCursoDoUser,
     upload,
 };
