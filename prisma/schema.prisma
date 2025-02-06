@@ -66,7 +66,8 @@ model Ebook {
   title       String
   description String
   autor      String
-  fileUrl     String  // URL do arquivo do eBook para download
+  fileUrl     String
+  price       String?  // URL do arquivo do eBook para download
   imageEbook  String? // URL da imagem de capa (opcional)
   createdAt   DateTime @default(now())
   updatedAt   DateTime @updatedAt

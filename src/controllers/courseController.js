@@ -144,12 +144,17 @@ const createCourse = async ({ title, description, price, videoUrl, coverImage })
 
 const createCourseWithSubcourses = async ({ title, description, price, videoUrl, coverImage, subCourses }) => {
     try {
-    
+
+        const priceNumber = parseFloat(price);
+        if (isNaN(priceNumber)) {
+            throw new Error("Valor inválido para price");
+        }
+
         const course = await prisma.course.create({
             data: {
                 title,
                 description,
-                price,
+                price: priceNumber,
                 videoUrl,
                 coverImage,
             },
@@ -159,7 +164,7 @@ const createCourseWithSubcourses = async ({ title, description, price, videoUrl,
         const subCoursesData = subCourses.map(subCourse => ({
             title: subCourse.title,
             description: subCourse.description,
-            price: subCourse.price,
+            price: parseFloat(subCourse.price), // Convertendo o preço para float
             videoUrl: subCourse.videoUrl,
             coverImage: subCourse.coverImage, // Incluindo a imagem de capa dos subcursos
             parentCourseId: course.id,
