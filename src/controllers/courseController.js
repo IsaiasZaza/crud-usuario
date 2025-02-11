@@ -1,15 +1,80 @@
 const { PrismaClient } = require('@prisma/client');
 const prisma = new PrismaClient();
 const { HTTP_STATUS_CODES, ERROR_MESSAGES, SUCCESS_MESSAGES } = require('../utils/enum');
-const { MercadoPagoConfig, Preference } = require('mercadopago');
+const Stripe = require('stripe');
 
-const client = new MercadoPagoConfig({
-    accessToken: process.env.MERCADO_PAGO_ACCESS_TOKEN
-});
 
-const preference = new Preference(client);
+const createSTRIPECheckoutSession = async ({ courseId, userId }) => {
+    try {
+        // Converte o courseId para número e valida
+        const courseIdNumber = parseInt(courseId, 10);
+        if (isNaN(courseIdNumber)) {
+            return {
+                status: 400,
+                data: { message: "ID do curso inválido" },
+            };
+        }
 
-const addCursoAoUser = async ({ userId, courseId }) => {
+        // Busca o curso com o id convertido
+        const course = await prisma.course.findUnique({
+            where: { id: courseIdNumber },
+        });
+        if (!course) {
+            return {
+                status: 404,
+                data: { message: "Curso não encontrado" },
+            };
+        }
+
+        // Instancia o cliente Stripe com a chave secreta
+        const stripe = new Stripe(process.env.STRIPE_SECRET_KEY, {
+            apiVersion: '2020-08-27',
+        });
+
+        // Cria a sessão de checkout do Stripe
+        const session = await stripe.checkout.sessions.create({
+            payment_method_types: [
+                'card',
+                'boleto',
+            ],
+            line_items: [
+                {
+                    price_data: {
+                        currency: 'brl',
+                        product_data: {
+                            name: course.title,
+                            description: course.description,
+                        },
+                        unit_amount: course.price * 100,
+                    },
+                    quantity: 1,
+                },
+            ],
+            mode: 'payment',
+            success_url: `${process.env.CLIENT_URL}/success?courseId=${courseId}&userId=${userId}`,
+            cancel_url: `${process.env.CLIENT_URL}/cancel`,
+            metadata: {
+                courseId,
+                userId,
+            },
+        });
+
+        console.log(session)
+
+        return {
+            status: 200,
+            data: { sessionId: session.id },
+        };
+    } catch (error) {
+        console.error(`Erro ao criar sessão de checkout: ${error.message}`);
+        return {
+            status: 500,
+            data: { message: "Erro ao criar sessão de checkout" },
+        };
+    }
+};
+
+const addCursoStripeAoUser = async ({ userId, courseId }) => {
     try {
         // Verificar se o curso existe
         const course = await prisma.course.findUnique({ where: { id: parseInt(courseId, 10) } });
@@ -62,13 +127,12 @@ const addCursoAoUser = async ({ userId, courseId }) => {
             data: { message: "Erro ao adicionar curso ao usuário" },
         };
     }
-};
+}
 
-
-const checkoutPro = async ({ courseId, userId }) => {
+const addCursoAoUser = async ({ userId, courseId }) => {
     try {
+        // Verificar se o curso existe
         const course = await prisma.course.findUnique({ where: { id: parseInt(courseId, 10) } });
-
         if (!course) {
             return {
                 status: 404,
@@ -76,8 +140,11 @@ const checkoutPro = async ({ courseId, userId }) => {
             };
         }
 
-        const user = await prisma.user.findUnique({ where: { id: parseInt(userId, 10) } });
-
+        // Verificar se o usuário existe
+        const user = await prisma.user.findUnique({
+            where: { id: parseInt(userId, 10) },
+            include: { courses: true },
+        });
         if (!user) {
             return {
                 status: 404,
@@ -85,31 +152,34 @@ const checkoutPro = async ({ courseId, userId }) => {
             };
         }
 
-        const response = await preference.create({
-            body: {
-                items: [
-                    {
-                        title: course.title,
-                        quantity: 1,
-                        unit_price: parseFloat(course.price),
-                        description: course.description,
-                    },
-                ],
-            }
+        // Verificar se o curso já está associado ao usuário
+        const isAlreadyAdded = user.courses.some(c => c.id === course.id);
+        if (isAlreadyAdded) {
+            return {
+                status: 400,
+                data: { message: "Curso já está associado ao usuário" },
+            };
+        }
+
+        // Adicionar o curso ao usuário
+        await prisma.user.update({
+            where: { id: parseInt(userId, 10) },
+            data: {
+                courses: {
+                    connect: { id: parseInt(courseId, 10) },
+                },
+            },
         });
 
         return {
             status: 200,
-            data: {
-                message: "Link de checkout criado com sucesso!",
-                init_point: response.init_point,
-            },
+            data: { message: "Curso adicionado ao usuário com sucesso!" },
         };
     } catch (error) {
-        console.error(`Erro ao criar checkout para courseId: ${courseId}, userId: ${userId}:`, error.message);
+        console.error(`Erro ao adicionar curso ao usuário: ${error.message}`);
         return {
             status: 500,
-            data: { message: "Erro ao criar checkout no Mercado Pago" },
+            data: { message: "Erro ao adicionar curso ao usuário" },
         };
     }
 };
@@ -367,7 +437,8 @@ module.exports = {
     updateCourse,
     deleteCourse,
     createCourseWithSubcourses,
-    checkoutPro,
     addCursoAoUser,
-    removeCursoDoUser
+    removeCursoDoUser,
+    createSTRIPECheckoutSession,
+    addCursoStripeAoUser
 };

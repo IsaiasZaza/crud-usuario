@@ -18,12 +18,77 @@ const {
 } = require('./controllers/userController');
 const authenticateUser = require('./middlewares/authMiddlewares');
 const { ERROR_MESSAGES, HTTP_STATUS_CODES } = require('./utils/enum');
-const { createCourse, getCourses, getCourseById, updateCourse, deleteCourse, createCourseWithSubcourses, checkoutPro, addCursoAoUser } = require('./controllers/courseController');
+const { createCourse, getCourses, getCourseById,
+    updateCourse, deleteCourse, createCourseWithSubcourses, createSTRIPECheckoutSession,
+    addCursoAoUser, addCursoStripeAoUser }
+    = require('./controllers/courseController');
 const { createEbook, getAllEbooks, getEbookById, updateEbook, deleteEbook } = require('./controllers/ebookController');
 const router = express.Router();
-
+const stripe = require('stripe')
+const STRIPE = new stripe(process.env.STRIPE_SECRET_KEY, { apiVersion: '2020-08-27' });
+const { PrismaClient } = require('@prisma/client');
+const prisma = new PrismaClient();
 
 require('dotenv').config();
+
+router.post('/webhook', async (request, response) => {
+    const sig = request.headers['stripe-signature'];
+    let event;
+
+    try {
+        event = stripe.webhooks.constructEvent(request.rawBody, sig, process.env.STRIPE_WEBHOOK_SECRET);
+    } catch (err) {
+        console.error('Erro ao processar webhook:', err);
+        return response.status(400).send(`Webhook Error: ${err.message}`);
+    }
+
+    try {
+        switch (event.type) {
+            case 'payment_intent.succeeded': {
+                const paymentIntent = event.data.object;
+                const { courseId, userId } = paymentIntent.metadata;
+                const result = await addCursoStripeAoUser({ userId, courseId });
+                console.log('Resultado da associação do curso:', result);
+                break;
+            }
+            case 'payment_intent.payment_failed': {
+                const paymentIntent = event.data.object;
+                const { last_payment_error } = paymentIntent;
+                console.error(`Pagamento falhou: ${last_payment_error ? last_payment_error.message : 'Erro desconhecido'}`);
+                break;
+            }
+            case 'payment_intent.created': {
+                const paymentIntent = event.data.object;
+                console.log('Novo PaymentIntent criado:', paymentIntent.id);
+                // Lógica adicional, se necessário
+                break;
+            }
+            case 'payment_intent.canceled': {
+                const paymentIntent = event.data.object;
+                console.log('PaymentIntent cancelado:', paymentIntent.id);
+                // Lógica para lidar com cancelamentos, se necessário
+                break;
+            }
+            default:
+                console.log(`Evento não tratado: ${event.type}`);
+        }
+    } catch (error) {
+        console.error('Erro no processamento do webhook:', error);
+        return response.status(500).json({ error: 'Erro interno no servidor' });
+    }
+
+    // Confirma o recebimento do webhook após o processamento
+    response.status(200).json({ received: true });
+});
+
+
+router.post('/checkout', async (req, res) => {
+    // Extraia os parâmetros com os nomes corretos
+    const { courseId, userId } = req.body;
+
+    const { status, data } = await createSTRIPECheckoutSession({ courseId, userId });
+    return res.status(status).json(data);
+});
 
 router.post('/ebook', async (req, res) => {
     const result = await createEbook(req.body);
@@ -52,18 +117,6 @@ router.get('/ebook/:id', async (req, res) => {
 
 router.post('/adicionarCurso', async (req, res) => {
     const result = await addCursoAoUser(req.body);
-    res.status(result.status).json(result.data);
-});
-
-router.post('/checkout', async (req, res) => { //checkout pro de pagamento
-    const { courseId, userId } = req.body;
-
-    if (!courseId || !userId) {
-        return res.status(400).json({ message: 'courseId e userId são obrigatórios.' });
-    }
-
-    const result = await checkoutPro({ courseId, userId });
-
     res.status(result.status).json(result.data);
 });
 
@@ -190,7 +243,7 @@ const validateCourseInput = (body) => {
 
 // Rota para criar curso e subcursos
 router.post('/courses', async (req, res) => {
-    const { title, description, price, subCourses } = req.body;
+    const { title, description, price, videoUrl, coverImage, subCourses } = req.body;
 
     // Validar entrada
     if (!validateCourseInput(req.body)) {
@@ -200,7 +253,7 @@ router.post('/courses', async (req, res) => {
     }
 
     try {
-        const result = await createCourseWithSubcourses({ title, description, price, subCourses });
+        const result = await createCourseWithSubcourses({ title, description, price, videoUrl, coverImage, subCourses });
 
         return res.status(result.status).json(result.data);
     } catch (error) {

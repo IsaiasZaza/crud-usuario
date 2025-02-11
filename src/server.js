@@ -11,8 +11,14 @@ module.exports = (config) => {
     const app = express();
 
     app.use(cors()); 
-    app.use(bodyParser.json());
-    app.use(express.json());
+
+    app.use(
+        express.json({
+          verify: (req, res, buf) => {
+            req.rawBody = buf.toString();
+          }
+        })
+      );
 
     // Servir arquivos estáticos (imagens de perfil)
     app.use('/uploads', express.static(path.resolve('uploads')));
