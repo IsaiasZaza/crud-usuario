@@ -27,9 +27,28 @@ const router = express.Router();
 const stripe = require('stripe')
 const STRIPE = new stripe(process.env.STRIPE_SECRET_KEY, { apiVersion: '2020-08-27' });
 const { PrismaClient } = require('@prisma/client');
-const prisma = new PrismaClient();
+const prisma = new PrismaClient()
+const { generateCertificate } = require('./controllers/certificateController')
 
 require('dotenv').config();
+
+router.post('/certificado', async (req, res) => {
+    const { studentName, courseName } = req.body;
+  
+    if (!studentName || !courseName) {
+      return res.status(400).json({ message: 'studentName e courseName são obrigatórios.' });
+    }
+  
+    try {
+      const pdfData = await generateCertificate(studentName, courseName);
+      res.setHeader('Content-Type', 'application/pdf');
+      res.setHeader('Content-Disposition', 'attachment; filename=certificate.pdf');
+      return res.status(200).send(pdfData);
+    } catch (error) {
+      console.error('Erro ao gerar certificado:', error.message);
+      return res.status(500).json({ message: 'Erro interno no servidor.' });
+    }
+  });
 
 router.post('/webhook', async (request, response) => {
     const sig = request.headers['stripe-signature'];
@@ -139,7 +158,7 @@ router.post('/login', async (req, res) => {
     return res.status(status).json(data);
 });
 
-router.get('/users', authenticateUser, async (req, res) => {
+router.get('/users', async (req, res) => {
     const { status, data } = await getUsers();
     return res.status(status).json(data);
 });
