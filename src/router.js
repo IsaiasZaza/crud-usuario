@@ -29,26 +29,27 @@ const STRIPE = new stripe(process.env.STRIPE_SECRET_KEY, { apiVersion: '2020-08-
 const { PrismaClient } = require('@prisma/client');
 const prisma = new PrismaClient()
 const { generateCertificate } = require('./controllers/certificateController')
+const { createCoursePresencial, updateCoursePresencial, getCoursePresencialId, getCoursesPresential, deleteCoursePresential } = require('./controllers/coursePresencialController')
 
 require('dotenv').config();
 
 router.post('/certificado', async (req, res) => {
     const { studentName, courseName } = req.body;
-  
+
     if (!studentName || !courseName) {
-      return res.status(400).json({ message: 'studentName e courseName são obrigatórios.' });
+        return res.status(400).json({ message: 'studentName e courseName são obrigatórios.' });
     }
-  
+
     try {
-      const pdfData = await generateCertificate(studentName, courseName);
-      res.setHeader('Content-Type', 'application/pdf');
-      res.setHeader('Content-Disposition', 'attachment; filename=certificate.pdf');
-      return res.status(200).send(pdfData);
+        const pdfData = await generateCertificate(studentName, courseName);
+        res.setHeader('Content-Type', 'application/pdf');
+        res.setHeader('Content-Disposition', 'attachment; filename=certificate.pdf');
+        return res.status(200).send(pdfData);
     } catch (error) {
-      console.error('Erro ao gerar certificado:', error.message);
-      return res.status(500).json({ message: 'Erro interno no servidor.' });
+        console.error('Erro ao gerar certificado:', error.message);
+        return res.status(500).json({ message: 'Erro interno no servidor.' });
     }
-  });
+});
 
 router.post('/webhook', async (request, response) => {
     const sig = request.headers['stripe-signature'];
@@ -106,6 +107,36 @@ router.post('/checkout', async (req, res) => {
     const { courseId, userId } = req.body;
 
     const { status, data } = await createSTRIPECheckoutSession({ courseId, userId });
+    return res.status(status).json(data);
+});
+
+router.post('/create-course-presencial', async (req, res) => {
+    const { title, description, price, material, location } = req.body;
+    const { status, data } = await createCoursePresencial({ title, description, price, material, location });
+    return res.status(status).json(data);
+});
+
+router.put('/update-course-presencial/:id', async (req, res) => {
+    const { id } = req.params;
+    const { title, description, coverImage, price, material, location } = req.body;
+    const { status, data } = await updateCoursePresencial({ id, title, description, coverImage, price, material, location });
+    return res.status(status).json(data);
+});
+
+router.get('/course-presencial/:id', async (req, res) => {
+    const { id } = req.params;
+    const { status, data } = await getCoursePresencialId({ id });
+    return res.status(status).json(data);
+});
+
+router.get('/courses-presencial', async (req, res) => {
+    const { status, data } = await getCoursesPresential();
+    return res.status(status).json(data);
+});
+
+router.delete('/course-presencial/:id', async (req, res) => {
+    const { id } = req.params;
+    const { status, data } = await deleteCoursePresential({ id });
     return res.status(status).json(data);
 });
 

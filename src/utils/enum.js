@@ -29,6 +29,26 @@ const ERROR_MESSAGES = {
     ERROR_UPDATING_VIDEO: 'Erro ao atualizar o vídeo.',
     ERROR_DELETING_VIDEO: 'Erro ao deletar o vídeo.',
     INVALID_VIDEO_DATA: 'Dados inválidos para o vídeo.',
+    ERROR_CREAT_COURSE: 'Erro ao criar curso.',
+    ERROR_UPDATE_COURSE: 'Erro ao atualizar curso.',
+    ERROR_DELETE_COURSE: 'Erro ao deletar curso.',
+    ERROR_COURSE_NOT_FOUND: 'Curso não encontrado.',
+    ERROR_COURSE_NOT_EXIST: 'Nenhum curso encontrado.',
+    ERROR_COURSE_ID: 'Erro ao obter curso por ID.',
+    ERROR_COURSE_TYPE: 'Tipo de curso inválido.',
+    ERROR_COURSE_TYPE_NOT_FOUND: 'Tipo de curso não encontrado.',
+    ERROR_COURSE_TYPE_NOT_EXIST: 'Nenhum tipo de curso encontrado.',
+    ERROR_COURSE_TYPE_ID: 'Erro ao obter tipo de curso por ID.',
+    ERROR_COURSE_TYPE_CREATE: 'Erro ao criar tipo de curso.',
+    ERROR_COURSE_TYPE_UPDATE: 'Erro ao atualizar tipo de curso.',
+    ERROR_COURSE_TYPE_DELETE: 'Erro ao deletar tipo de curso.',
+    ERROR_COURSE_TYPE_NOT_FOUND: 'Tipo de curso não encontrado.',
+    ERROR_COURSE_TYPE_NOT_EXIST: 'Nenhum tipo de curso encontrado.',
+    ERROR_COURSE_TYPE_ID: 'Erro ao obter tipo de curso por ID.',
+    ERROR_COURSE_TYPE_CREATE: 'Erro ao criar tipo de curso.',
+    ERROR_COURSE_TYPE_UPDATE: 'Erro ao atualizar tipo de curso.',
+    ERROR_FETCH_COURSE: 'Erro ao buscar curso.',
+    ERROR_COURSES_NOT_FOUND: 'Nenhum curso encontrado.',
 };
 
 const SUCCESS_MESSAGES = {
@@ -48,6 +68,10 @@ const SUCCESS_MESSAGES = {
     VIDEO_DELETED: 'Vídeo deletado com sucesso.',
     VIDEO_FOUND: 'Vídeo encontrado.',
     VIDEOS_FOUND: 'Vídeos encontrados com sucesso.',
+    COURSE_DELETED: 'Curso deletado com sucesso.',
+    COURSE_NOT_FOUND: 'Curso não encontrado.',
+    COURSES_NOT_FOUND: 'Nenhum curso encontrado.',
+    COURSE_FOUND: 'Curso encontrado com sucesso.',
 };
 
 const USER_ROLES_DESCRIPTION = {
