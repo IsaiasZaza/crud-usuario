@@ -42,6 +42,8 @@ model Course {
   coverImage     String? // URL ou caminho da imagem de capa (opcional)
   type           CourseType @default(ONLINE) // <- novo campo
   location       String? // <- novo campo para curso presencial
+  durationHours  Float? // <- novo campo para curso presencial
+  periodoCurso   String? // <- novo campo para curso presencial
   overview       String? // <- novo campo
   material       String? // <- novo campo
   createdAt      DateTime   @default(now())

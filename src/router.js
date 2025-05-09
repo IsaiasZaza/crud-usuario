@@ -29,7 +29,13 @@ const STRIPE = new stripe(process.env.STRIPE_SECRET_KEY, { apiVersion: '2020-08-
 const { PrismaClient } = require('@prisma/client');
 const prisma = new PrismaClient()
 const { generateCertificate } = require('./controllers/certificateController')
-const { createCoursePresencial, updateCoursePresencial, getCoursePresencialId, getCoursesPresential, deleteCoursePresential } = require('./controllers/coursePresencialController')
+const { createCoursePresencial,
+    updateCoursePresencial,
+    getCoursePresencialId,
+    getCoursesPresential,
+    deleteCoursePresential,
+    addCursoAoUserPresential
+} = require('./controllers/coursePresencialController')
 
 require('dotenv').config();
 
@@ -110,16 +116,22 @@ router.post('/checkout', async (req, res) => {
     return res.status(status).json(data);
 });
 
+router.post('/add-course-presencial', async (req, res) => {
+    const { userId, courseId } = req.body;
+    const { status, data } = await addCursoAoUserPresential({ userId, courseId });
+    return res.status(status).json(data);
+});
+
 router.post('/create-course-presencial', async (req, res) => {
-    const { title, description, price, material, location } = req.body;
-    const { status, data } = await createCoursePresencial({ title, description, price, material, location });
+    const { title, description, price, material, location, durationHours, periodoCurso } = req.body;
+    const { status, data } = await createCoursePresencial({ title, description, price, material, location, durationHours, periodoCurso });
     return res.status(status).json(data);
 });
 
 router.put('/update-course-presencial/:id', async (req, res) => {
     const { id } = req.params;
-    const { title, description, coverImage, price, material, location } = req.body;
-    const { status, data } = await updateCoursePresencial({ id, title, description, coverImage, price, material, location });
+    const { title, description, coverImage, price, material, location, durationHours, periodoCurso } = req.body;
+    const { status, data } = await updateCoursePresencial({ id, title, description, coverImage, price, material, location, durationHours, periodoCurso });
     return res.status(status).json(data);
 });
 

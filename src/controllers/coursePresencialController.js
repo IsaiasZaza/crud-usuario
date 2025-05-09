@@ -2,15 +2,18 @@ const { PrismaClient } = require('@prisma/client');
 const prisma = new PrismaClient();
 const { HTTP_STATUS_CODES, ERROR_MESSAGES, SUCCESS_MESSAGES } = require('../utils/enum');
 
-const createCoursePresencial = async ({ title, description, price, material, location, type = 'PRESENTIAL' }) => {
+const createCoursePresencial = async ({ title, description, price, material, location, coverImage, type = 'PRESENTIAL', durationHours, periodoCurso }) => {
     try {
         const newCourse = await prisma.course.create({
             data: {
                 title,
                 description,
+                coverImage,
                 price,
                 material,
                 location,
+                durationHours,
+                periodoCurso,
                 type: type.toUpperCase(),
             },
         });
@@ -32,7 +35,7 @@ const createCoursePresencial = async ({ title, description, price, material, loc
     }
 }
 
-const updateCoursePresencial = async ({ id, title, description, coverImage, price, material, location }) => {
+const updateCoursePresencial = async ({ id, title, description, coverImage, price, material, location, durationHours, periodoCurso }) => {
     try {
         const updatedCourse = await prisma.course.update({
             where: { id: parseInt(id, 10) },
@@ -43,6 +46,8 @@ const updateCoursePresencial = async ({ id, title, description, coverImage, pric
                 ...(material && { material }),
                 ...(location && { location }),
                 ...(coverImage && { coverImage }),
+                ...(durationHours && { durationHours }),
+                ...(periodoCurso && { periodoCurso }),
             },
         });
 
@@ -153,10 +158,58 @@ const deleteCoursePresential = async ({ id }) => {
     }
 }
 
+const addCursoAoUserPresential = async ({ userId, courseId }) => {
+    try {
+        const user = await prisma.user.findUnique({
+            where: { id: parseInt(userId, 10) },
+            include: { courses: true },
+        });
+
+        if (!user) {
+            return {
+                status: HTTP_STATUS_CODES.NOT_FOUND,
+                data: { message: ERROR_MESSAGES.ERROR_USER_NOT_FOUND },
+            };
+        }
+
+        const course = await prisma.course.findUnique({
+            where: { id: parseInt(courseId, 10) },
+        });
+
+        if (!course) {
+            return {
+                status: HTTP_STATUS_CODES.NOT_FOUND,
+                data: { message: ERROR_MESSAGES.ERROR_COURSE_NOT_FOUND },
+            };
+        }
+
+        const updatedUser = await prisma.user.update({
+            where: { id: parseInt(userId, 10) },
+            data: {
+                courses: {
+                    connect: { id: parseInt(courseId, 10) },
+                },
+            },
+        });
+
+        return {
+            status: HTTP_STATUS_CODES.OK,
+            data: updatedUser,
+        };
+    } catch (error) {
+        console.error('Erro ao adicionar curso ao usuário:', error.message);
+        return {
+            status: HTTP_STATUS_CODES.INTERNAL_SERVER_ERROR,
+            data: { message: ERROR_MESSAGES.ERROR_ADD_COURSE_TO_USER },
+        };
+    }
+}
+
 module.exports = {
     createCoursePresencial,
     updateCoursePresencial,
     getCoursePresencialId,
     getCoursesPresential,
     deleteCoursePresential,
+    addCursoAoUserPresential,
 };
