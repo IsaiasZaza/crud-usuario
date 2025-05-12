@@ -127,7 +127,7 @@ router.post('/checkout', async (req, res) => {
                 },
                 auto_return: 'approved',
                 external_reference: JSON.stringify({ courseId, userId }),
-                notification_url: 'https://5875-2804-8aa4-3e6c-2400-5ce4-9cd3-3972-f3af.ngrok-free.app/api/webhook/mercadopago',
+                notification_url: 'https://crud-usuario.vercel.app/api/webhook/mercadopago',
             }
         })
 
