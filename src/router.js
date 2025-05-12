@@ -48,7 +48,7 @@ const { MercadoPagoConfig, Preference, Payment } = require('mercadopago');
 
 
 const client = new MercadoPagoConfig({
-    accessToken: 'APP_USR-1898976269291132-051022-5acad82d1b320d6d272e7a0330a87a33-2435348112'
+    accessToken: 'APP_USR-6595130337209466-051020-0376863cb45c4d8612ddcc9f565ea131-2427821890'
 });
 const payment = new Payment(client);
 
