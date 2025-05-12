@@ -16,19 +16,26 @@ const {
     removeCursoDoUser,
     upload,
 } = require('./controllers/userController');
+
 const authenticateUser = require('./middlewares/authMiddlewares');
+
 const { ERROR_MESSAGES, HTTP_STATUS_CODES } = require('./utils/enum');
+
 const { createCourse, getCourses, getCourseById,
-    updateCourse, deleteCourse, createCourseWithSubcourses, createSTRIPECheckoutSession,
-    addCursoAoUser, addCursoStripeAoUser }
+    updateCourse, deleteCourse, createCourseWithSubcourses,
+    addCursoAoUser }
     = require('./controllers/courseController');
+
 const { createEbook, getAllEbooks, getEbookById, updateEbook, deleteEbook } = require('./controllers/ebookController');
+
 const router = express.Router();
-const stripe = require('stripe')
-const STRIPE = new stripe(process.env.STRIPE_SECRET_KEY, { apiVersion: '2020-08-27' });
+
 const { PrismaClient } = require('@prisma/client');
+
 const prisma = new PrismaClient()
+
 const { generateCertificate } = require('./controllers/certificateController')
+
 const { createCoursePresencial,
     updateCoursePresencial,
     getCoursePresencialId,
@@ -36,6 +43,15 @@ const { createCoursePresencial,
     deleteCoursePresential,
     addCursoAoUserPresential
 } = require('./controllers/coursePresencialController')
+
+const { MercadoPagoConfig, Preference, Payment } = require('mercadopago');
+
+
+const client = new MercadoPagoConfig({
+    accessToken: 'APP_USR-1898976269291132-051022-5acad82d1b320d6d272e7a0330a87a33-2435348112'
+});
+const payment = new Payment(client);
+
 
 require('dotenv').config();
 
@@ -57,63 +73,200 @@ router.post('/certificado', async (req, res) => {
     }
 });
 
-router.post('/webhook', async (request, response) => {
-    const sig = request.headers['stripe-signature'];
-    let event;
-
+// Exemplo com Express
+router.post('/checkout', async (req, res) => {
     try {
-        event = stripe.webhooks.constructEvent(request.rawBody, sig, process.env.STRIPE_WEBHOOK_SECRET);
-    } catch (err) {
-        console.error('Erro ao processar webhook:', err);
-        return response.status(400).send(`Webhook Error: ${err.message}`);
-    }
+        const { courseId, userId } = req.body;
 
-    try {
-        switch (event.type) {
-            case 'payment_intent.succeeded': {
-                const paymentIntent = event.data.object;
-                const { courseId, userId } = paymentIntent.metadata;
-                const result = await addCursoStripeAoUser({ userId, courseId });
-                console.log('Resultado da associação do curso:', result);
-                break;
-            }
-            case 'payment_intent.payment_failed': {
-                const paymentIntent = event.data.object;
-                const { last_payment_error } = paymentIntent;
-                console.error(`Pagamento falhou: ${last_payment_error ? last_payment_error.message : 'Erro desconhecido'}`);
-                break;
-            }
-            case 'payment_intent.created': {
-                const paymentIntent = event.data.object;
-                console.log('Novo PaymentIntent criado:', paymentIntent.id);
-                // Lógica adicional, se necessário
-                break;
-            }
-            case 'payment_intent.canceled': {
-                const paymentIntent = event.data.object;
-                console.log('PaymentIntent cancelado:', paymentIntent.id);
-                // Lógica para lidar com cancelamentos, se necessário
-                break;
-            }
-            default:
-                console.log(`Evento não tratado: ${event.type}`);
+        if (!userId || !courseId) {
+            return res.status(400).json({ message: 'userId e courseId são obrigatórios.' });
         }
-    } catch (error) {
-        console.error('Erro no processamento do webhook:', error);
-        return response.status(500).json({ error: 'Erro interno no servidor' });
-    }
 
-    // Confirma o recebimento do webhook após o processamento
-    response.status(200).json({ received: true });
+        const existingPurchase = await prisma.purchase.findFirst({
+            where: {
+                userId: Number(userId),
+                courseId: Number(courseId),
+                status: 'approved',
+            },
+        });
+
+        if (existingPurchase) {
+            return res.status(400).json({ message: 'Você já comprou este curso.' });
+        }
+
+        const course = await prisma.course.findUnique({
+            where: { id: Number(courseId) },
+        });
+
+        if (!course) {
+            return res.status(404).json({ message: 'Curso não encontrado.' });
+        }
+
+
+        // Criação de uma nova preferência de pagamento
+        const preference = new Preference(client);
+
+        const response = await preference.create({
+            body: {
+                items: [
+                    {
+                        title: course.title,
+                        unit_price: course.price,
+                        description: course.description,
+                        quantity: 1,
+                    },
+                ],
+                metadata: {
+                    userId: Number(userId),
+                    courseId: Number(courseId),
+                },
+                back_urls: {
+                    success: `${process.env.CLIENT_URL}/success?courseId=${courseId}&userId=${userId}`,
+                    failure: 'https://seusite.com/erro',
+                    pending: `${process.env.CLIENT_URL}/cancel`,
+                },
+                auto_return: 'approved',
+                external_reference: JSON.stringify({ courseId, userId }),
+                notification_url: 'https://5875-2804-8aa4-3e6c-2400-5ce4-9cd3-3972-f3af.ngrok-free.app/api/webhook/mercadopago',
+            }
+        })
+
+        // Retorna a URL de pagamento para o front-end
+        res.status(200).json({ init_point: response.init_point });
+    } catch (error) {
+        console.error('Erro ao criar preferência:', error.message || error);
+        return res.status(500).json({ error: 'Erro ao criar preferência de pagamento', details: error.message || error });
+    }
 });
 
+router.post('/webhook/mercadopago', async (req, res) => {
+    try {
+        const topic = req.query.topic || req.query.type || req.body.type;
+        if (topic !== 'payment') return res.sendStatus(200);
 
-router.post('/checkout', async (req, res) => {
-    // Extraia os parâmetros com os nomes corretos
-    const { courseId, userId } = req.body;
+        const paymentId =
+            req.body?.data?.id ||
+            req.query['data.id'] ||
+            req.query.id ||
+            req.body.id ||
+            req.body.resource?.match?.(/\d+/)?.[0];
 
-    const { status, data } = await createSTRIPECheckoutSession({ courseId, userId });
-    return res.status(status).json(data);
+        if (!paymentId) return res.sendStatus(400);
+
+        console.log(req.body);
+
+        const result = await payment.get({ id: paymentId });
+        const data = result;
+        if (!data) return res.sendStatus(404);
+
+        let externalRef;
+        try {
+            externalRef = JSON.parse(data.external_reference || '{}');
+        } catch {
+            return res.sendStatus(400);
+        }
+
+        const { courseId, userId } = externalRef;
+        if (!courseId || !userId) return res.sendStatus(400);
+
+        const status = data.status;
+
+        switch (status) {
+            case 'approved': {
+                const alreadyBought = await prisma.purchase.findFirst({
+                    where: { courseId, userId },
+                });
+
+                if (!alreadyBought) {
+                    await prisma.purchase.create({
+                        data: {
+                            courseId,
+                            userId,
+                            status: 'APROVADO',
+                            metodoPagamento: data.payment_method_id || 'desconhecido',
+                            transactionId: data.id?.toString(),
+                        },
+                    });
+                }
+
+                await addCursoAoUser({
+                    userId,
+                    courseId,
+                });
+
+                return res.status(200).json({ message: 'Compra aprovada e registrada com sucesso!' });
+            }
+
+            case 'pending': {
+                await prisma.purchase.upsert({
+                    where: {
+                        transactionId: data.id?.toString(),
+                    },
+                    update: {
+                        status: 'PENDENTE',
+                    },
+                    create: {
+                        courseId,
+                        userId,
+                        status: 'PENDENTE',
+                        metodoPagamento: data.payment_method_id || 'desconhecido',
+                        transactionId: data.id?.toString(),
+                    },
+                });
+
+                return res.status(200).json({ message: 'Pagamento pendente registrado.' });
+            }
+
+            case 'rejected': {
+                await prisma.purchase.upsert({
+                    where: {
+                        transactionId: data.id?.toString(),
+                    },
+                    update: {
+                        status: 'REJEITADO',
+                    },
+                    create: {
+                        courseId,
+                        userId,
+                        status: 'REJEITADO',
+                        metodoPagamento: data.payment_method_id || 'desconhecido',
+                        transactionId: data.id?.toString(),
+                    },
+                });
+
+                return res.status(200).json({ message: 'Pagamento rejeitado registrado.' });
+            }
+
+            case 'cancelled':
+            case 'cancelled_by_user': {
+                await prisma.purchase.upsert({
+                    where: {
+                        transactionId: data.id?.toString(),
+                    },
+                    update: {
+                        status: 'CANCELADO',
+                    },
+                    create: {
+                        courseId,
+                        userId,
+                        status: 'CANCELADO',
+                        metodoPagamento: data.payment_method_id || 'desconhecido',
+                        transactionId: data.id?.toString(),
+                    },
+                });
+
+                return res.status(200).json({ message: 'Pagamento cancelado registrado.' });
+            }
+
+            default: {
+                console.warn(`⚠️ Status de pagamento desconhecido: ${status}`);
+                return res.status(200).json({ message: `Status ignorado: ${status}` });
+            }
+        }
+    } catch (error) {
+        console.error('❌ Erro no webhook Mercado Pago:', error);
+        if (!res.headersSent) res.sendStatus(500);
+    }
 });
 
 router.post('/add-course-presencial', async (req, res) => {

@@ -67,6 +67,8 @@ model Purchase {
   status    String // 'pending', 'paid', 'cancelled', etc.
   createdAt DateTime @default(now())
   updatedAt DateTime @updatedAt
+  transactionId String? // ID da transação de pagamento
+  metodoPagamento String? // Método de pagamento (cartão, boleto, etc.)
 
   user   User   @relation(fields: [userId], references: [id])
   course Course @relation(fields: [courseId], references: [id])
