@@ -49,6 +49,9 @@ const ERROR_MESSAGES = {
     ERROR_COURSE_TYPE_UPDATE: 'Erro ao atualizar tipo de curso.',
     ERROR_FETCH_COURSE: 'Erro ao buscar curso.',
     ERROR_COURSES_NOT_FOUND: 'Nenhum curso encontrado.',
+    TOKEN_REQUIRED: 'Token is required',
+    INVALID_TOKEN: 'Invalid token',
+    TOKEN_EXPIRED: 'Token has expired',
 };
 
 const SUCCESS_MESSAGES = {

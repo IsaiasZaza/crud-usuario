@@ -18,6 +18,7 @@ const {
 } = require('./controllers/userController');
 
 const authenticateUser = require('./middlewares/authMiddlewares');
+const jwt = require('jsonwebtoken');
 
 const { ERROR_MESSAGES, HTTP_STATUS_CODES } = require('./utils/enum');
 
@@ -54,6 +55,23 @@ const payment = new Payment(client);
 
 
 require('dotenv').config();
+
+router.get('/api/validar-token', (req, res) => {
+    const authHeader = req.headers['authorization'];
+    const token = authHeader?.split(' ')[1];
+
+    if (!token) {
+        return res.status(401).json({ message: 'Token ausente' });
+    }
+
+    try {
+        const decoded = jwt.verify(token, process.env.JWT_SECRET);
+        return res.status(200).json({ message: 'Token válido', user: decoded });
+    } catch (error) {
+        return res.status(401).json({ message: 'Token inválido ou expirado' });
+    }
+});
+
 
 router.post('/certificado', async (req, res) => {
     const { studentName, courseName } = req.body;
@@ -276,8 +294,8 @@ router.post('/add-course-presencial', async (req, res) => {
 });
 
 router.post('/create-course-presencial', async (req, res) => {
-    const { title, description, price, material, location, durationHours, periodoCurso } = req.body;
-    const { status, data } = await createCoursePresencial({ title, description, price, material, location, durationHours, periodoCurso });
+    const { title, description, price, material, location, durationHours, periodoCurso, coverImage } = req.body;
+    const { status, data } = await createCoursePresencial({ title, description, price, material, location, durationHours, periodoCurso, coverImage });
     return res.status(status).json(data);
 });
 
