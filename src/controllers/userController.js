@@ -223,7 +223,7 @@ const loginUser = async ({ email, senha, role }) => {
 
 const changeUserPassword = async ({ id, senhaAtual, novaSenha }) => {
     try {
-        const user = await prisma.user.findUnique({ where: { id: parseInt(id, 10) } });
+        const user = await prisma.user.findUnique({ where: { id: id } });
 
         if (!user) {
             return {
@@ -250,7 +250,7 @@ const changeUserPassword = async ({ id, senhaAtual, novaSenha }) => {
         const novaSenhaHash = await bcrypt.hash(novaSenha, SALT_ROUNDS);
 
         await prisma.user.update({
-            where: { id: parseInt(id, 10) },
+            where: { id: (id) },
             data: { senha: novaSenhaHash },
         });
 
@@ -288,7 +288,7 @@ const getUsers = async () => {
 const getUserById = async ({ id }) => {
     try {
         const user = await prisma.user.findUnique({
-            where: { id: parseInt(id, 10) },
+            where: { id: id },
             include: { courses: true },
         });
 
@@ -330,7 +330,7 @@ const updateUser = async ({
 }) => {
     try {
         const updatedUser = await prisma.user.update({
-            where: { id: parseInt(id, 10) },
+            where: { id: id },
             data: {
                 ...(nome && { nome }),
                 ...(email && { email }),
@@ -389,7 +389,7 @@ const updateUser = async ({
 
 const deleteUser = async ({ id }) => {
     try {
-        await prisma.user.delete({ where: { id: parseInt(id, 10) } });
+        await prisma.user.delete({ where: { id: id } });
         return {
             status: HTTP_STATUS_CODES.NO_CONTENT,
             data: { message: SUCCESS_MESSAGES.USER_DELETED }
@@ -496,7 +496,7 @@ const updateProfilePicture = async (id, filePath) => {
     try {
         // Atualiza o perfil do usuário no banco de dados
         const updatedUser = await prisma.user.update({
-            where: { id: parseInt(id, 10) },
+            where: { id: id },
             data: { profilePicture: filePath }  // Atualiza a foto de perfil
         });
 
@@ -525,7 +525,7 @@ const updateProfilePicture = async (id, filePath) => {
 const removeProfilePicture = async ({ id }) => {
     try {
         const updatedUser = await prisma.user.update({
-            where: { id: parseInt(id, 10) }, // Garante que o ID seja um número
+            where: { id: id }, // Garante que o ID seja um número
             data: { profilePicture: null },  // Define a foto como null
         });
 
@@ -552,7 +552,7 @@ const removeProfilePicture = async ({ id }) => {
 const addProfilePicture = async ({ id, profilePicture }) => {
     try {
         const updatedUser = await prisma.user.update({
-            where: { id: parseInt(id, 10) },
+            where: { id: id },
             data: { profilePicture },
         });
 

@@ -46,7 +46,7 @@ getEbookById = async ({ id }) => {
     try {
         const ebook = await prisma.ebook.findUnique({
             where: {
-                id: parseInt(id)
+                id: id
             }
         });
 
@@ -73,7 +73,7 @@ const updateEbook = async ({ id, title, description, autor, price, fileUrl, imag
     try {
         const ebook = await prisma.ebook.update({
             where: {
-                id: parseInt(id)
+                id: id
             },
             data: {
                 title,
@@ -101,7 +101,7 @@ const deleteEbook = async ({ id }) => {
     try {
         await prisma.ebook.delete({
             where: {
-                id: parseInt(id)
+                id: id
             }
         });
 

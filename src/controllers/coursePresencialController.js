@@ -96,7 +96,7 @@ const updateCoursePresencial = async ({
     organizerInstagram, }) => {
     try {
         const updatedCourse = await prisma.course.update({
-            where: { id: parseInt(id, 10) },
+            where: { id: id },
             data: {
                 ...(title && { title }),
                 ...(description && { description }),
@@ -135,7 +135,7 @@ const updateCoursePresencial = async ({
 const getCoursePresencialId = async ({ id }) => {
     try {
         const course = await prisma.course.findUnique({
-            where: { id: parseInt(id, 10), type: 'PRESENTIAL' },
+            where: { id: id, type: 'PRESENTIAL' },
         });
 
         if (!course) {
@@ -188,7 +188,7 @@ const getCoursesPresential = async () => {
 const deleteCoursePresential = async ({ id }) => {
     try {
         const deletedCourse = await prisma.course.delete({
-            where: { id: parseInt(id, 10) },
+            where: { id: id},
         });
 
 
@@ -219,7 +219,7 @@ const deleteCoursePresential = async ({ id }) => {
 const addCursoAoUserPresential = async ({ userId, courseId }) => {
     try {
         const user = await prisma.user.findUnique({
-            where: { id: parseInt(userId, 10) },
+            where: { id: userId },
             include: { courses: true },
         });
 
@@ -231,7 +231,7 @@ const addCursoAoUserPresential = async ({ userId, courseId }) => {
         }
 
         const course = await prisma.course.findUnique({
-            where: { id: parseInt(courseId, 10) },
+            where: { id: courseId },
         });
 
         if (!course) {
@@ -242,10 +242,10 @@ const addCursoAoUserPresential = async ({ userId, courseId }) => {
         }
 
         const updatedUser = await prisma.user.update({
-            where: { id: parseInt(userId, 10) },
+            where: { id: userId },
             data: {
                 courses: {
-                    connect: { id: parseInt(courseId, 10) },
+                    connect: { id: courseId},
                 },
             },
         });

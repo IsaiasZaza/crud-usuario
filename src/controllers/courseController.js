@@ -6,7 +6,7 @@ const { HTTP_STATUS_CODES, ERROR_MESSAGES, SUCCESS_MESSAGES } = require('../util
 const addCursoAoUser = async ({ userId, courseId }) => {
     try {
         // Verificar se o curso existe
-        const course = await prisma.course.findUnique({ where: { id: parseInt(courseId, 10) } });
+        const course = await prisma.course.findUnique({ where: { id: (courseId) } });
         if (!course) {
             return {
                 status: 404,
@@ -16,7 +16,7 @@ const addCursoAoUser = async ({ userId, courseId }) => {
 
         // Verificar se o usuário existe
         const user = await prisma.user.findUnique({
-            where: { id: parseInt(userId, 10) },
+            where: { id: (userId) },
             include: { courses: true },
         });
         if (!user) {
@@ -37,10 +37,10 @@ const addCursoAoUser = async ({ userId, courseId }) => {
 
         // Adicionar o curso ao usuário
         await prisma.user.update({
-            where: { id: parseInt(userId, 10) },
+            where: { id: (userId) },
             data: {
                 courses: {
-                    connect: { id: parseInt(courseId, 10) },
+                    connect: { id: courseId },
                 },
             },
         });
@@ -162,7 +162,7 @@ const getCourses = async () => {
 const getCourseById = async ({ id }) => {
     try {
         const course = await prisma.course.findUnique({
-            where: { id: parseInt(id, 10) },
+            where: { id: id },
             include: { subCourses: true }, // Inclui os subcursos ao buscar por ID
         });
 
@@ -190,7 +190,7 @@ const getCourseById = async ({ id }) => {
 const updateCourse = async ({ id, title, description, price, videoUrl, coverImage }) => {
     try {
         const updatedCourse = await prisma.course.update({
-            where: { id: parseInt(id, 10) },
+            where: { id: id },
             data: {
                 ...(title && { title }),
                 ...(description && { description }),
@@ -219,7 +219,7 @@ const updateCourse = async ({ id, title, description, price, videoUrl, coverImag
 // Deletar curso
 const deleteCourse = async ({ id }) => {
     try {
-        const courseId = parseInt(id, 10);
+        const courseId = id;
 
         // Verifica se existem cursos filhos com parentId igual ao ID do curso que está sendo deletado
         const subCourses = await prisma.course.findMany({
@@ -252,7 +252,7 @@ const deleteCourse = async ({ id }) => {
 const removeCursoDoUser = async ({ userId, courseId }) => {
     try {
         // Verificar se o curso existe
-        const course = await prisma.course.findUnique({ where: { id: parseInt(courseId, 10) } });
+        const course = await prisma.course.findUnique({ where: { id: courseId } });
         if (!course) {
             return {
                 status: 404,
@@ -262,7 +262,7 @@ const removeCursoDoUser = async ({ userId, courseId }) => {
 
         // Verificar se o usuário existe
         const user = await prisma.user.findUnique({
-            where: { id: parseInt(userId, 10) },
+            where: { id: userId },
             include: { courses: true },
         });
         if (!user) {
@@ -283,10 +283,10 @@ const removeCursoDoUser = async ({ userId, courseId }) => {
 
         // Remover o curso do usuário
         await prisma.user.update({
-            where: { id: parseInt(userId, 10) },
+            where: { id: userId },
             data: {
                 courses: {
-                    disconnect: { id: parseInt(courseId, 10) },
+                    disconnect: { id: courseId },
                 },
             },
         });
