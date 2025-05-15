@@ -294,10 +294,72 @@ router.post('/add-course-presencial', async (req, res) => {
 });
 
 router.post('/create-course-presencial', async (req, res) => {
-    const { title, description, price, material, location, durationHours, periodoCurso, coverImage } = req.body;
-    const { status, data } = await createCoursePresencial({ title, description, price, material, location, durationHours, periodoCurso, coverImage });
+  try {
+    const {
+      title,
+      subtitle,
+      description,
+      overview,
+      material,
+      price,
+      videoUrl,
+      coverImage,
+      type,
+      location,
+      durationHours,
+      periodoCurso,
+      schedule,
+      audience,
+      instructor,
+      organizer
+    } = req.body;
+
+    // Desestrutura os dados do instructor
+    const {
+      name: instructorName,
+      title: instructorTitle,
+      crm: instructorCRM,
+      rqe: instructorRQE
+    } = instructor || {};
+
+    // Desestrutura os dados do organizer
+    const {
+      name: organizerName,
+      fullName: organizerFullName,
+      instagram: organizerInstagram
+    } = organizer || {};
+
+    const { status, data } = await createCoursePresencial({
+      title,
+      subtitle,
+      description,
+      overview,
+      material,
+      price,
+      videoUrl,
+      coverImage,
+      type,
+      location,
+      durationHours,
+      periodoCurso,
+      schedule,
+      audience,
+      instructorName,
+      instructorTitle,
+      instructorCRM,
+      instructorRQE,
+      organizerName,
+      organizerFullName,
+      organizerInstagram
+    });
+
     return res.status(status).json(data);
+  } catch (error) {
+    console.error('Erro ao criar curso presencial:', error);
+    return res.status(500).json({ message: 'Erro interno no servidor.' });
+  }
 });
+
 
 router.put('/update-course-presencial/:id', async (req, res) => {
     const { id } = req.params;

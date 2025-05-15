@@ -2,19 +2,55 @@ const { PrismaClient } = require('@prisma/client');
 const prisma = new PrismaClient();
 const { HTTP_STATUS_CODES, ERROR_MESSAGES, SUCCESS_MESSAGES } = require('../utils/enum');
 
-const createCoursePresencial = async ({ title, description, price, material, location, coverImage, type = 'PRESENTIAL', durationHours, periodoCurso }) => {
+
+const createCoursePresencial = async ({
+    title,
+    subtitle,
+    description,
+    overview,
+    material,
+    price,
+    videoUrl,
+    coverImage,
+    type = 'PRESENTIAL',
+    location,
+    durationHours,
+    periodoCurso,
+    schedule,
+    audience,
+    instructorName,
+    instructorTitle,
+    instructorCRM,
+    instructorRQE,
+    organizerName,
+    organizerFullName,
+    organizerInstagram,
+
+}) => {
     try {
         const newCourse = await prisma.course.create({
             data: {
                 title,
+                subtitle,
                 description,
-                coverImage,
-                price,
+                overview,
                 material,
+                price,
+                videoUrl,
+                coverImage,
+                type,
                 location,
                 durationHours,
                 periodoCurso,
-                type: type.toUpperCase(),
+                schedule,
+                audience,
+                instructorName,
+                instructorTitle,
+                instructorCRM,
+                instructorRQE,
+                organizerName,
+                organizerFullName,
+                organizerInstagram,
             },
         });
 
@@ -35,7 +71,29 @@ const createCoursePresencial = async ({ title, description, price, material, loc
     }
 }
 
-const updateCoursePresencial = async ({ id, title, description, coverImage, price, material, location, durationHours, periodoCurso }) => {
+const updateCoursePresencial = async ({ 
+    id, 
+    title,
+    subtitle,
+    description,
+    overview,
+    material,
+    price,
+    videoUrl,
+    coverImage,
+    type,
+    location,
+    durationHours,
+    periodoCurso,
+    schedule,
+    audience,
+    instructorName,
+    instructorTitle,
+    instructorCRM,
+    instructorRQE,
+    organizerName,
+    organizerFullName,
+    organizerInstagram, }) => {
     try {
         const updatedCourse = await prisma.course.update({
             where: { id: parseInt(id, 10) },

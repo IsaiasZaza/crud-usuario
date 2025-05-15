@@ -34,25 +34,35 @@ model User {
 }
 
 model Course {
-  id             Int        @id @default(autoincrement())
-  title          String
-  description    String
-  price          Float
-  videoUrl       String? // URL ou caminho do vídeo (opcional)
-  coverImage     String? // URL ou caminho da imagem de capa (opcional)
-  type           CourseType @default(ONLINE) // <- novo campo
-  location       String? // <- novo campo para curso presencial
-  durationHours  Float? // <- novo campo para curso presencial
-  periodoCurso   String? // <- novo campo para curso presencial
-  overview       String? // <- novo campo
-  material       String? // <- novo campo
-  createdAt      DateTime   @default(now())
-  updatedAt      DateTime   @updatedAt
-  purchases      Purchase[]
-  users          User[]     @relation("UserCourses")
-  parentCourseId Int? // ID do curso pai, opcional
-  parentCourse   Course?    @relation("SubCourses", fields: [parentCourseId], references: [id])
-  subCourses     Course[]   @relation("SubCourses")
+  id                 Int        @id @default(autoincrement())
+  title              String
+  subtitle           String? // <- novo campo: subtítulo do curso
+  description        String
+  overview           String? // <- novo campo: visão geral
+  material           String? // <- novo campo: materiais adicionais
+  price              Float
+  videoUrl           String? // URL ou caminho do vídeo (opcional)
+  coverImage         String? // URL ou caminho da imagem de capa (opcional)
+  type               CourseType @default(ONLINE) // ONLINE ou PRESENCIAL
+  location           String? // Local (para cursos presenciais)
+  durationHours      Float? // Duração em horas
+  periodoCurso       String? // Período ou data do curso
+  schedule           String? // <- novo campo: horário (ex: "19h às 22h")
+  audience           String? // <- novo campo: público-alvo
+  instructorName     String? // <- novo campo: nome do instrutor
+  instructorTitle    String? // <- novo campo: título do instrutor
+  instructorCRM      String? // <- novo campo: CRM do instrutor
+  instructorRQE      String? // <- novo campo: RQE(s) do instrutor
+  organizerName      String? // <- novo campo: nome do organizador
+  organizerFullName  String? // <- novo campo: nome completo do organizador
+  organizerInstagram String? // <- novo campo: Instagram do organizador
+  createdAt          DateTime   @default(now())
+  updatedAt          DateTime   @updatedAt
+  purchases          Purchase[]
+  users              User[]     @relation("UserCourses")
+  parentCourseId     Int? // ID do curso pai, opcional
+  parentCourse       Course?    @relation("SubCourses", fields: [parentCourseId], references: [id])
+  subCourses         Course[]   @relation("SubCourses")
 }
 
 enum CourseType {
@@ -61,13 +71,13 @@ enum CourseType {
 }
 
 model Purchase {
-  id        Int      @id @default(autoincrement())
-  userId    Int
-  courseId  Int
-  status    String // 'pending', 'paid', 'cancelled', etc.
-  createdAt DateTime @default(now())
-  updatedAt DateTime @updatedAt
-  transactionId String? // ID da transação de pagamento
+  id              Int      @id @default(autoincrement())
+  userId          Int
+  courseId        Int
+  status          String // 'pending', 'paid', 'cancelled', etc.
+  createdAt       DateTime @default(now())
+  updatedAt       DateTime @updatedAt
+  transactionId   String? // ID da transação de pagamento
   metodoPagamento String? // Método de pagamento (cartão, boleto, etc.)
 
   user   User   @relation(fields: [userId], references: [id])
