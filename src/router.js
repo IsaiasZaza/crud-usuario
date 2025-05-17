@@ -102,8 +102,8 @@ router.post('/checkout', async (req, res) => {
 
         const existingPurchase = await prisma.purchase.findFirst({
             where: {
-                userId: Number(userId),
-                courseId: Number(courseId),
+                userId: String(userId),
+                courseId: String(courseId),
                 status: 'approved',
             },
         });
@@ -113,7 +113,7 @@ router.post('/checkout', async (req, res) => {
         }
 
         const course = await prisma.course.findUnique({
-            where: { id: Number(courseId) },
+            where: { id: String(courseId) },
         });
 
         if (!course) {
@@ -135,8 +135,8 @@ router.post('/checkout', async (req, res) => {
                     },
                 ],
                 metadata: {
-                    userId: Number(userId),
-                    courseId: Number(courseId),
+                    userId: String(userId),
+                    courseId: String(courseId),
                 },
                 back_urls: {
                     success: `${process.env.CLIENT_URL}/success?courseId=${courseId}&userId=${userId}`,
