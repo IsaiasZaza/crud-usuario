@@ -140,7 +140,7 @@ router.post('/checkout', async (req, res) => {
                 },
                 back_urls: {
                     success: `${process.env.CLIENT_URL}/success?courseId=${courseId}&userId=${userId}`,
-                    failure: '${process.env.CLIENT_URL}/cancel',
+                    failure: `${process.env.CLIENT_URL}/cancel`,
                     pending: `${process.env.CLIENT_URL}/cancel`,
                 },
                 auto_return: 'approved',
